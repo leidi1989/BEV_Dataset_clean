@@ -1,0 +1,2 @@
+unlable:
+car:suvcar mini bus twelvebus elevenbus tenbus ninebus eightbus sevenbus sixbus van mvan lvan pickup mtruck ltruck wtruck sixtruck seventruck eighttruck ninetruck tentruck twelvetruck thirteentruck fourteentruck sixteentruck eighteentruck nineteentruck twentytruck twentyonetruck twentythreetruck oil-tanker sixoil-tanker sevenoil-tanker tenoil-tanker twelveoil-tanker fifteenoil-tanker msprinkler sprinkler eight-sprinkler cleaning-truck garbage-truck concrete-mixer mdigging forklift engineering-vehicle cement-tanker emergency-rescue ambulance tram truck vehicles

@@ -1,0 +1,7 @@
+person:pedestrian cyclist
+cyclist:cyclist
+car:cartail carfull specialvehicletail specialvehiclefull vantail vanfull
+truck:trucktail truckfull engineeringvehicletail engineeringvehiclefull othervehicletail othervehiclefull
+bus:busfull bustail
+twowheeler:motorcycle bicycle
+conebarrel:

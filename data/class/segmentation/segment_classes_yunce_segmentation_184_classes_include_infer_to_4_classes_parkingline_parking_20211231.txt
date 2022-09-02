@@ -1,0 +1,4 @@
+unlabeled:unlabel_infer self.car self.car_infer
+parkingline:traffic.lane.parkingspacesolidline traffic.lane.parkingspacesolidline_infer
+parkinglimiter:traffic.lane.parking_limiter traffic.lane.parking_limiter_infer
+parkingspace:ground.parkinglot ground.parkinglot_infer ground.parkingspace ground.parkingspace_infer

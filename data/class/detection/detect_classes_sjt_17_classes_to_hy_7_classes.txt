@@ -1,0 +1,7 @@
+person:standingpeople sittingpeople
+cyclist:e-bikeriders/moto-cyclists cyclists
+car:sedan van
+truck:truck tricycle
+bus:citybus mediumbus Interurban coach trolleycar
+twowheeler:
+conebarrel:

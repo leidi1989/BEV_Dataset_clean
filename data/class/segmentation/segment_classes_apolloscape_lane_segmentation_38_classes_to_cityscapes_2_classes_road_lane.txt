@@ -1,0 +1,2 @@
+unlabeled:noise ignored
+lane:s_w_d s_y_d ds_w_dn ds_y_dn sb_w_do sb_y_do b_w_g b_y_g db_w_g db_y_g

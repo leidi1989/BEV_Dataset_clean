@@ -1,0 +1,2 @@
+parkingspace:ground.parkinglot ground.parkinglot_infer ground.parkingspace ground.parkingspace_infer
+parkinglimiter:traffic.lane.parking_limiter traffic.lane.parking_limiter_infer

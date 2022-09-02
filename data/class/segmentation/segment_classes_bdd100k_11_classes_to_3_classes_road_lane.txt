@@ -1,0 +1,3 @@
+unlabeled:
+road:area/alternative area/drivable lane/crosswalk area/unknown
+lane:lane/singleother lane/singlewhite lane/singleyellow lane/doubleother lane/doublewhite lane/doubleyellow

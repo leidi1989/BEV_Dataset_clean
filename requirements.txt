@@ -1,0 +1,17 @@
+# base ----------------------------------------
+# pip install -r requirements.txt
+# ros
+gnupg
+matplotlib
+opencv-python
+pandas
+pycryptodome
+pyyaml
+rospkg
+scikit-build
+shapely
+sqlalchemy
+torch
+torchvision
+tqdm
+yapf

@@ -1,0 +1,7 @@
+person:human.pedestrain.adult human.pedestrain.child human.pedestrain.old human.pedestrain.crutch human.pedestrain.wheelchair human.pedestrain.policeofficer human.pedestrain.pedestrian_group
+cyclist:human.rider.cyclist human.rider.motorcyclist human.rider.tricyclist human.rider.e-scooter human.rider.stroller human.rider.perambulator human.rider.rider_group
+car:vehicle.motorvehicle.car vehicle.motorvehicle.van vehicle.motorvehicle.SUV vehicle.motorvehicle.sweeper vehicle.motorvehicle.motortricycle vehicle.emergency.ambulance vehicle.emergency.policecar
+truck:vehicle.motorvehicle.truck vehicle.motorvehicle.engineering vehicle.emergency.fireengine vehicle.motorvehicle.caravan vehicle.motorvehicle.trailer
+bus:vehicle.motorvehicle.bus vehicle.motorvehicle.coach
+twowheeler:vehicle.nonmotorvehicle.motorcycle vehicle.nonmotorvehicle.scooter vehicle.nonmotorvehicle.tricycle vehicle.nonmotorvehicle.bicycle vehicle.nonmotorvehicle.perambulator
+conebarrel:static_object.concave.trafficcone

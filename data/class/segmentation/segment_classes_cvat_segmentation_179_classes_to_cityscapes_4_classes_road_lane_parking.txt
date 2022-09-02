@@ -1,0 +1,4 @@
+unlabeled:
+road:ground.road traffic.lane.guideline traffic.lane.zebrastripes traffic.lane.slowdown traffic.lane.forward_arrow traffic.lane.left_arrow traffic.lane.right_arrow traffic.lane.speedbump traffic.lane.mesh traffic.lane.left_turn_waiting_zone static_object.convex.unknown
+lane:traffic.lane.dottedline traffic.lane.dottedlineyellowe traffic.lane.unknown traffic.lane.solidline traffic.lane.solidlineyellow traffic.lane.doubleline traffic.lane.doublelineyellow traffic.lane.stopline traffic.lane.tidal_lane traffic.lane.forward_left_arrow traffic.lane.forward_right_arrow traffic.lane.left_right_arrow traffic.lane.parkingspacesolidline traffic.lane.parking_limiter
+parkingspace:ground.parkingspace

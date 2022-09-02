@@ -1,0 +1,147 @@
+# 数据集输入路径
+Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/20220512_20220615_data_statistic_total_xml_20220711/0615_wuda_huangjinkou_data_128（+90度）
+
+# 数据集输出路径
+Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/20220512_20220615_data_statistic_total_xml_20220711/clean_dataset_20220725/0615_wuda_huangjinkou_data_128（+90度）_20220725
+
+# 输入数据集类型:
+# CVAT_IMAGE_BEV
+# CVAT_COCO2017, YUNCE_SEGMENT_COCO, YUNCE_SEGMENT_COCO_ONE_IMAGE, HUAWEIYUN_SEGMENT, HY_VAL,
+# SJT, MYXB, HY_HIGHWAY, GEELY_COCO_ONE_IMAGE
+# YOLO, COCO2017, BDD100K, TT100K, CCTSDB, LISA, KITTI, APOLLOSCAPE_LANE_SEGMENT,
+# TI_EDGEAILITE_AUTO_ANNOTATION
+Source_dataset_style: CVAT_IMAGE_BEV
+
+# 目标数据集类型：
+# NUSCENES, CROSSVIEW, CROSSVIEWTRANSFORMERS
+# COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO, CROSS_VIEW
+Target_dataset_style: CROSSVIEW
+
+# 目标数据集视角:
+# BEV or perspective
+Target_dataset_view: BEV
+
+# 重命名前缀
+# images or labels need to rename prefix
+File_prefix: statistic
+
+# name delimiter(cityscapes need: "@")
+File_prefix_delimiter: "@"
+
+# 是否仅做统计
+Only_statistic: True
+
+# 是否统计标注目标距离
+Statistic_label_object_distance: True
+# 统计标注范围
+Statistic_label_distance: 120
+# 统计标注范围间隔
+Statistic_label_distance_statistic_segmentation: 3
+
+# 是否统计标注目标角度
+Statistic_label_object_angle: True
+# 统计标注范围
+Statistic_label_angle: 360
+# 统计标注范围间隔
+Statistic_label_angle_statistic_segmentation: 15
+
+
+# 是否为二分类:
+# backgound and object
+Two_class: True
+
+# 相机图片宽和高
+# Camera image width and height
+Camera_image_wh: 6400,2400
+# Camera_image_wh: 3200,1200
+
+# 标注图片宽和高
+# Label image width and height
+Label_image_wh: 6400,6400
+# Label_image_wh: 3200,7200
+
+
+# 标注范围：前后左右（米）
+# front back left right
+# Label_range: 80,80,80,80
+Label_range: 100,40,40,40
+
+# 调整标注范围：前后左右（米）
+# Adjust label range: front back left right
+# Adjust_label_range: 80,80,80,80
+# Adjust_label_range: 40,40,15,15
+Adjust_label_range: 100,40,40,40
+
+# 标注框旋转角度
+# Label box rotation angle
+Label_object_rotation_angle: 90
+
+# 图像标定内外参数
+# camera calibration extrinsics and intrinsics file folder
+Camera_calibration_file_path:
+  extrinsics:
+    CAM_BACK: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/back_extrinsic.yml
+    CAM_BACK_LEFT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/left_back_extrinsic.yml
+    CAM_BACK_RIGHT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/right_back_extrinsic.yml
+    CAM_FRONT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/front_center_extrinsic.yml
+    CAM_FRONT_LEFT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/left_front_extrinsic.yml
+    CAM_FRONT_RIGHT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/extrinsics/right_front_extrinsic.yml
+  intrinsics:
+    CAM_BACK: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/back_intrinsics.yml
+    CAM_BACK_LEFT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/left_back_intrinsics.yml
+    CAM_BACK_RIGHT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/right_back_intrinsics.yml
+    CAM_FRONT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/front_center_intrinsics.yml
+    CAM_FRONT_LEFT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/left_front_intrinsics.yml
+    CAM_FRONT_RIGHT: /mnt/data_1/Dataset/dataset_temp/hq1_calibration_result_20220607/intrinsics/right_front_intrinsics.yml
+
+# 语义分割标注图片宽高
+# Sementic segmentation label image wh
+Semantic_segmentation_label_image_wh: 512,512
+
+# 同步偏移
+# syn offset
+Offset:
+  Camera_hz:
+  Delay_time:
+
+# 数据集划分比例
+# (train, val, test, redund)
+# Target_dataset_divide_proportion: 0.95,0.025,0.025,0
+Target_dataset_divide_proportion: 1,0,0,0
+
+# 检测目标数据集标注文件
+# check target annotations
+Target_dataset_check_annotations_count: 10
+
+# 检测目标数据集输出是否为掩码
+# check target annotations show annotations as mask
+Target_dataset_check_annotations_output_as_mask: False
+
+# 是否将语义分割转换为标注框，或标注框转换为语义分割
+# segmentation_to_box, box_to_segmentation
+Need_convert:
+
+# 任务和类别配置（唯一选项）
+# Task and class config, select only one.
+# Detection, Semantic_segmentation, Instance_segmentation, Keypoints
+Task_and_class_config:
+  Detection:
+    Source_dataset_class_file_path: Clean_up/data/class/bev/hy_bev_20220711.name
+    Modify_class_file_path:
+    Target_each_class_object_pixel_limit_file_path:
+  # Semantic_segmentation:
+  #   Source_dataset_class_file_path: Clean_up/data/auto_annotation/TI_edgeailite_auto_annotation_yunce_parking_6_classes.names
+  #   Modify_class_file_path:
+  #   Target_each_class_object_pixel_limit_file_path:
+  # Instance_segmentation:
+  #   Source_dataset_class_file_path: Clean_up/data/class/instance/instance_classes_bdd100k_11_classes.names
+  #   Modify_class_file_path: Clean_up/data/class/instance/instance_classes_bdd100k_11_classes_to_7_classes_line.txt
+  #   Target_each_class_object_pixel_limit_file_path:
+  # Keypoints:
+  #   Source_dataset_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_20211116.names
+  #   Modify_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_to_3_classes.txt
+  #   Target_each_class_object_pixel_limit_file_path:
+
+# 是否debug
+# progress debug
+debug: False

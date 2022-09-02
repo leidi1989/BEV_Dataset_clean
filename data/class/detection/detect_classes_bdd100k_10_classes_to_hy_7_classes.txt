@@ -1,0 +1,7 @@
+person:person
+cyclist:rider
+car:car
+truck:truck
+bus:bus
+twowheeler:bike motor
+conebarrel:

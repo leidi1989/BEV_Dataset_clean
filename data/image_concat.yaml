@@ -1,0 +1,11 @@
+input_folder: /mnt/data_1/Dataset/dataset_temp/test_4_image_concate
+
+output_folder: /mnt/data_1/Dataset/dataset_temp/test_4_image_concate_20220225
+
+concate_num: 4
+
+# images or labels need to rename prefix
+File_prefix: "test"
+
+# name delimiter(cityscapes need: "@")
+File_prefix_delimiter: "@"

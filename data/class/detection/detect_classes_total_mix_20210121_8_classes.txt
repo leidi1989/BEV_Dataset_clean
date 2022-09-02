@@ -1,0 +1,8 @@
+person:person pedestrian cyclist standingpeople sittingpeople cyclists e-bikeriders/moto-cyclists
+car:car carfull vanfull sedan van
+truck:truck truckfull specialvehiclefull engineeringvehiclefull
+bus:bus busfull citybus mediumbus
+motorbike:motorbike motorcycle
+bicycle:bicycle tricyclefull tricycle
+train:train tram trolleycar interurbancoach
+conebarrel:conebarrel

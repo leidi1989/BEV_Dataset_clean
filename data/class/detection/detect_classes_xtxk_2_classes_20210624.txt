@@ -1,0 +1,2 @@
+person:cyclist
+car:truck bus

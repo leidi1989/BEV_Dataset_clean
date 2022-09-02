@@ -1,0 +1,35 @@
+unlabeled:
+egovehicle:
+rectificationborder:
+outofroi:
+static:
+dynamic:
+ground:
+road:ground.road traffic.lane.guideline traffic.lane.zebrastripes traffic.lane.slowdown traffic.lane.forward_arrow traffic.lane.left_arrow traffic.lane.right_arrow traffic.lane.speedbump traffic.lane.mesh traffic.lane.left_turn_waiting_zone static_object.convex.unknown
+sidewalk:ground.sidewalk
+parking:ground.parkinglot ground.parkingspace
+railtrack:ground.railtrack
+building:static_object.construction.building static_object.concave.trafficpost static_object.construction.unknown static_object.concave.unkown
+wall:static_object.construction.wall
+fence:static_object.construction.fence static_object.construction.flowerbed static_object.concave.barrier static_object.concave.stake static_object.concave.safetybarriers traffic.lane.curbline
+guardrail:static_object.construction.guardrail
+bridge:static_object.construction.bridge
+tunnel:static_object.construction.tunnel
+pole:static_object.concave.pole
+polegroup:static_object.concave.polegroup
+trafficlight:traffic.signal.light traffic.signal.redlight traffic.signal.redlight_left traffic.signal.redlight_right traffic.signal.greenlight traffic.signal.greenlight_left traffic.signal.greenlight_right traffic.signal.yellowlight traffic.signal.yellowlight_left traffic.signal.yellowlight_right traffic.signal.unknown
+trafficsign:traffic.sign.singleline traffic.sign.narrowroad traffic.sign.steephill traffic.sign.curveroad traffic.sign.doublebendroad traffic.sign.downgrade traffic.sign.roadjunction traffic.sign.crosscoad traffic.sign.turnleft traffic.sign.turnright traffic.sign.keepleft traffic.sign.keepright traffic.sign.slow traffic.sign.speed20 traffic.sign.speed30 traffic.sign.speed40 traffic.sign.speed50 traffic.sign.speed60 traffic.sign.speed70 traffic.sign.speed80 traffic.sign.speed90 traffic.sign.speed100 traffic.sign.speed110 traffic.sign.speed120 traffic.sign.nothrough traffic.sign.keepinline traffic.sign.noturns traffic.sign.loop traffic.sign.unknown
+vegetation:nature.vegetation nature.shrub nature.tree nature.tree_group nature.unknown
+terrain:ground.lawn ground.unknown
+sky:
+person:human.pedestrain.adult human.pedestrain.child human.pedestrain.old human.pedestrain.crutch human.pedestrain.wheelchair human.pedestrain.policeofficer human.pedestrain.pedestrian_group human.pedestrain.unknown
+rider:human.rider.cyclist human.rider.motorcyclist human.rider.tricyclist human.rider.e-scooter human.rider.stroller human.rider.perambulator human.rider.rider_group human.rider.unknown
+car:vehicle.motorvehicle.car vehicle.motorvehicle.van vehicle.motorvehicle.SUV vehicle.motorvehicle.sweeper vehicle.motorvehicle.motortricycle vehicle.emergency.ambulance vehicle.emergency.policecar vehicle.motorvehicle.unknown vehicle.emergency.unknown
+truck:vehicle.motorvehicle.truck vehicle.motorvehicle.engineering vehicle.emergency.fireengine
+bus:vehicle.motorvehicle.bus vehicle.motorvehicle.coach
+caravan:vehicle.motorvehicle.caravan
+trailer:vehicle.motorvehicle.trailer
+train:traffic.lane.solidline traffic.lane.solidlineyellow traffic.lane.dottedline traffic.lane.dottedlineyellowe traffic.lane.doubleline traffic.lane.doublelineyellow traffic.lane.stopline traffic.lane.tidal_lane traffic.lane.unknown
+motorcycle:vehicle.nonmotorvehicle.motorcycle vehicle.nonmotorvehicle.scooter vehicle.nonmotorvehicle.tricycle vehicle.nonmotorvehicle.unknown
+bicycle:vehicle.nonmotorvehicle.bicycle vehicle.nonmotorvehicle.perambulator
+licenseplate:vehicle.motorvehicle.licenseplate

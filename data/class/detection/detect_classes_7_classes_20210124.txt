@@ -1,0 +1,7 @@
+person:pedestrian standingpeople sittingpeople
+cyclist:motorbike e-bikeriders/moto-cyclists cyclists
+car:cartail carfull vantail vanfull specialvehicletail specialvehiclefull sedan van
+truck:trucktail truckfull engineeringvehicletail engineeringvehiclefull othervehicletail othervehiclefull tricycle
+bus:bustail busfull citybus mediumbus interurbancoach trolleycar
+twowheeler:motorcycle bicycle
+conebarrel:

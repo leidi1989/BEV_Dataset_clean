@@ -1,0 +1,7 @@
+unlable:
+person:
+cyclist:three-wheel
+car:suvcar mini ambulance emergency-rescue pickup van mvan lvan
+truck:mtruck ltruck wtruck sixtruck seventruck eighttruck ninetruck tentruck twelvetruck fourteentruck sixteentruck eighteentruck twentytruck twentyonetruck twentythreetruck oil-tanker sixoil-tanker sevenoil-tanker tenoil-tanker fifteenoil-tanker cement-tanker msprinkler sprinkler eight-sprinkler cleaning-truck garbage-truck concrete-mixer engineering-vehicle mdigging forklift vehicles
+bus:twelvebus elevenbus tenbus ninebus eightbus sevenbus sixbus tram
+conebarrel:

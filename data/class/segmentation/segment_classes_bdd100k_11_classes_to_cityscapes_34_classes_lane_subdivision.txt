@@ -1,0 +1,35 @@
+unlabeled:area/unknown lane/crosswalk
+egovehicle:
+rectificationborder:
+outofroi:
+static:
+dynamic:
+ground:
+road:area/alternative area/drivable
+sidewalk:
+parking:
+railtrack:
+building:
+wall:
+fence:lane/roadcurb
+guardrail:
+bridge:
+tunnel:
+pole:
+polegroup:
+trafficlight:
+trafficsign:
+vegetation:
+terrain:
+sky:lane/doubleother lane/doublewhite lane/doubleyellow
+person:
+rider:
+car:
+truck:
+bus:
+caravan:
+trailer:
+train:lane/singleother lane/singlewhite lane/singleyellow
+motorcycle:
+bicycle:
+licenseplate:
