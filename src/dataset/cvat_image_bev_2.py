@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-08-31 17:20:30
+LastEditTime: 2022-09-06 13:47:13
 '''
 import multiprocessing
 import shutil
@@ -46,13 +46,17 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         """
 
         image_count = 0
-        for n in os.listdir(self.dataset_input_folder):
-            if n == 'annotations.xml':
+        for root, dirs, _ in os.walk(self.dataset_input_folder):
+            if root != self.dataset_input_folder:
                 continue
-            for m in os.listdir(os.path.join(self.dataset_input_folder, n)):
-                if os.path.splitext(m)[-1].replace('.', '') in \
-                            self.source_dataset_image_form_list:
-                    image_count += 1
+            for dirct in dirs:
+                annotation_root = os.path.join(root, dirct)
+                for n in os.listdir(annotation_root):
+                    if n == 'related_images':
+                        continue
+                    if os.path.splitext(n)[-1].replace('.', '') in \
+                                self.source_dataset_image_form_list:
+                        image_count += 1
 
         return image_count
 
@@ -284,8 +288,10 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
             source_annotation_name (str): 源标注文件名称
             process_output (dict): 进程间通信字典
         """
+        # image_name = str(annotation.attrib['name']).split(
+        #     '.')[0] + '.' + self.temp_image_form
         image_name = str(annotation.attrib['name']).split(
-            '.')[0] + '.' + self.temp_image_form
+            os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
         image_name_new = self.file_prefix + image_name
         image_path = os.path.join(self.temp_images_folder, image_name_new)
         channels = 0

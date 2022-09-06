@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-09-02 11:04:54
+LastEditTime: 2022-09-06 14:09:37
 '''
 import argparse
 import time
@@ -23,7 +23,7 @@ def clean(dataset_config: dict) -> None:
 
     Input_dataset = dataset.__dict__[dataset_config['Source_dataset_style']](
         dataset_config)
-    Input_dataset.source_dataset_copy_image_and_annotation()
+    # Input_dataset.source_dataset_copy_image_and_annotation()
     Input_dataset.transform_to_temp_dataset()
     Input_dataset.output_classname_file()
     if not Input_dataset.only_statistic:
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     parser.add_argument('--config',
                         '--c',
                         dest='config',
-                        default=r'config/default.yaml',
+                        default=r'config/0524dfgj.yaml',
                         type=str,
                         help='dataset config file path')
     parser.add_argument(

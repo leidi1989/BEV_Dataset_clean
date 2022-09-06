@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-02 10:45:43
+LastEditTime: 2022-09-06 14:07:06
 '''
 import shutil
 import multiprocessing
@@ -217,7 +217,9 @@ class PYVA(Dataset_Base):
             dataset_instance.target_dataset_annotations_folder,
             file_name + '.json')
 
-        if dataset_instance.source_dataset_style in ['CVAT_IMAGE_BEV_NAS']:
+        if dataset_instance.source_dataset_style in [
+                'CVAT_IMAGE_BEV_NAS', 'CVAT_IMAGE_BEV_2'
+        ]:
             # CVAT_IMAGE_BEV_2
             # input
             shutil.copy(source_image_path, input_image_output_path)
