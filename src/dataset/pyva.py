@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-06 14:07:06
+LastEditTime: 2022-09-06 16:29:53
 '''
 import shutil
 import multiprocessing
@@ -283,10 +283,18 @@ class PYVA(Dataset_Base):
                  dataset_instance.semantic_segmentation_label_image_wh[1]),
                 interpolation=cv2.INTER_NEAREST)
 
-            dynamic_static_image = Image.fromarray(
-                np.uint8(dynamic_static_image))
-            dynamic_static_image.save(dynamic_image_output_path)
-            dynamic_static_image.save(static_image_output_path)
+            if 2 == len(class_names_dict):
+                dynamic_image_output_path = os.path.join(
+                    output_folder_path_list[1], file_name + '.jpg')
+                static_image_output_path = os.path.join(
+                    output_folder_path_list[2], file_name + '.jpg')
+                cv2.imwrite(dynamic_image_output_path, dynamic_static_image)
+                cv2.imwrite(static_image_output_path, dynamic_static_image)
+            else:
+                dynamic_static_image = Image.fromarray(
+                    np.uint8(dynamic_static_image))
+                dynamic_static_image.save(dynamic_image_output_path)
+                dynamic_static_image.save(static_image_output_path)
         else:
             # input
             source_image = cv2.imread(source_image_path)
@@ -352,10 +360,17 @@ class PYVA(Dataset_Base):
                 (dataset_instance.semantic_segmentation_label_image_wh[0],
                  dataset_instance.semantic_segmentation_label_image_wh[1]),
                 interpolation=cv2.INTER_NEAREST)
-
-            dynamic_static_image = Image.fromarray(
-                np.uint8(dynamic_static_image))
-            dynamic_static_image.save(dynamic_image_output_path)
-            dynamic_static_image.save(static_image_output_path)
+            if 2 == len(class_names_dict):
+                dynamic_image_output_path = os.path.join(
+                    output_folder_path_list[1], file_name + '.jpg')
+                static_image_output_path = os.path.join(
+                    output_folder_path_list[2], file_name + '.jpg')
+                cv2.imwrite(dynamic_static_image, dynamic_image_output_path)
+                cv2.imwrite(dynamic_static_image, static_image_output_path)
+            else:
+                dynamic_static_image = Image.fromarray(
+                    np.uint8(dynamic_static_image))
+                dynamic_static_image.save(dynamic_image_output_path)
+                dynamic_static_image.save(static_image_output_path)
 
         return
