@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-14 13:53:03
+LastEditTime: 2022-09-14 19:51:36
 '''
 import json
 import math
@@ -186,7 +186,7 @@ class BOX:
         Returns:
             _type_: _description_
         """
-        
+
         width, height = abs(xtl - xbr), abs(ytl - ybr)
         if width < height:
             width, height = height, width
@@ -472,23 +472,63 @@ class OBJECT(BOX, SEGMENTATION, KEYPOINTS):
         return
 
 
-class EGO_POSE:
-    def __init__(self) -> None:
-        pass
+# class EGO_POSE:
+#     """图片位置坐标类
+#     """
+
+#     def __init__(self,
+#                  latitude_in: float,
+#                  longitude_in: float,
+#                  elevation_in: float,
+#                  utm_position_x_in: float,
+#                  utm_position_y_in: float,
+#                  utm_position_z_in: float,
+#                  attitude_x_in: float,
+#                  attitude_y_in: float,
+#                  attitude_z_in: float,
+#                  position_type_in: int,
+#                  osmname_in: str = '') -> None:
+#         """
+
+#         Args:
+#             latitude_in (float): _description_
+#             longitude_in (float): _description_
+#             elevation_in (float): _description_
+#             utm_position_x_in (float): _description_
+#             utm_position_y_in (float): _description_
+#             utm_position_z_in (float): _description_
+#             attitude_x_in (float): _description_
+#             attitude_y_in (float): _description_
+#             attitude_z_in (float): _description_
+#             position_type_in (int): _description_
+#             osmname_in (str, optional): _description_. Defaults to ''.
+#         """
+
+#         self.latitude = latitude_in
+#         self.longitude = longitude_in
+#         self.elevation = elevation_in
+#         self.utm_position_x = utm_position_x_in
+#         self.utm_position_y = utm_position_y_in
+#         self.utm_position_z = utm_position_z_in
+#         self.attitude_x = attitude_x_in
+#         self.attitude_y = attitude_y_in
+#         self.attitude_z = attitude_z_in
+#         self.position_type = position_type_in
+#         self.osmname = osmname_in
+
 
 class IMAGE:
     """图片类"""
 
-    def __init__(
-        self,
-        image_name_in: str = '',
-        image_name_new_in: str = '',
-        image_path_in: str = '',
-        height_in: int = 0,
-        width_in: int = 0,
-        channels_in: int = 0,
-        object_list_in: list = None,
-    ) -> None:
+    def __init__(self,
+                 image_name_in: str = '',
+                 image_name_new_in: str = '',
+                 image_path_in: str = '',
+                 height_in: int = 0,
+                 width_in: int = 0,
+                 channels_in: int = 0,
+                 object_list_in: list = None,
+                 image_ego_dict_in: dict = None) -> None:
         """[图片类]
 
         Args:
@@ -517,6 +557,7 @@ class IMAGE:
             self.object_exist_flag = True
         else:
             self.object_exist_flag = False
+        self.image_ego_dict = image_ego_dict_in
 
     def object_class_modify_and_pixel_limit(self,
                                             dataset_instance: object) -> None:

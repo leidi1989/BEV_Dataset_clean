@@ -4,13 +4,15 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-14 17:22:46
+LastEditTime: 2022-09-14 20:09:12
 '''
 import multiprocessing
 import shutil
 import xml.etree.ElementTree as ET
 
 import cv2
+import lanelet2
+
 from base.dataset_base import Dataset_Base
 from base.image_base import *
 from utils import image_form_transform
@@ -46,6 +48,20 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         self.source_dataset_annotation_count = self.get_source_dataset_annotation_count(
         )
         self.source_dataset_map_count = self.get_source_dataset_map_count()
+        self.image_ego_pose_dict = self.get_image_ego_pose()
+        self.get_map = opt['Get_map']
+        self.lat_lon_origin_city = opt['Lat_lon_origin_city']
+        self.lat_lon_origin = {
+            'wuhan': {
+                'lat': 30.425457029885372151,
+                'lon': 114.09623523096009023
+            },
+            'shenzhen': {
+                'lat': 22.6860589,
+                'lon': 114.3779897
+            },
+        }
+        self.lanelet_layers = {}
 
     def get_source_dataset_image_count(self) -> int:
         """[获取源数据集图片数量]
@@ -96,6 +112,51 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
         return map_count
 
+    def get_image_ego_pose(self) -> dict:
+        """获取图片坐标位置
+
+        Returns:
+            dict: 图片坐标位置字典
+        """
+        print('\n Start get image ego pose:')
+        sync_data_folder = os.path.join(self.dataset_input_folder, 'sync_data')
+        image_ego_pose_dict = {}
+        for n in tqdm(os.listdir(sync_data_folder), desc='Get image ego pose'):
+            batch_folder = os.path.join(sync_data_folder, n)
+            if os.path.isdir(batch_folder):
+                for index, m in enumerate(
+                        os.listdir(
+                            os.path.join(batch_folder,
+                                         'annotation_bev_image'))):
+                    poses = []
+                    with open(
+                            os.path.join(os.path.join(batch_folder,
+                                                      'pose.txt')), "r") as f:
+                        for line in f:
+                            data = line.split(" ")
+                            poses.append(data)
+                    if os.path.splitext(m)[-1].replace('.', '') in \
+                                self.source_dataset_image_form_list:
+                        image_name = str(m).split(os.sep)[-1].split(
+                            '.')[0] + '.' + self.temp_image_form
+                        image_name_new = self.file_prefix + image_name
+                        image_ego_pose_dict.update(
+                            {image_name_new: poses[index * 5]})
+
+        return image_ego_pose_dict
+
+    def get_lanelet_layers(self) -> dict:
+        proj = lanelet2.projection.UtmProjector(
+            lanelet2.io.Origin(self.lat_lon_origin['wuhan']['lat'],
+                               self.lat_lon_origin['wuhan']['lon']))
+        lanelet_layers = {}
+        for n in os.listdir(self.source_dataset_map_folder):
+            lanelet_layers[n] = lanelet2.io.load(
+                os.path.join(self.source_dataset_map_folder, n),
+                proj).laneletLayer
+
+        return lanelet_layers
+
     def source_dataset_copy_image_and_annotation(self) -> None:
         """拷贝图片和标注文件
         """
@@ -119,9 +180,10 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                                          error_callback=err_call_back)
                     pool.close()
                     pool.join()
-                pbar.close()
+            pbar.close()
 
-        for n in os.listdir(self.dataset_input_folder):
+        for n in tqdm(os.listdir(self.dataset_input_folder),
+                      desc='Copy annotations'):
             if n == 'annotations.xml':
                 annotation_path = os.path.join(self.dataset_input_folder, n)
                 temp_annotation_path = os.path.join(
@@ -130,7 +192,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 shutil.copy(annotation_path, temp_annotation_path)
 
         map_osm_folder = os.path.join(self.dataset_input_folder, 'osm')
-        for n in os.listdir(map_osm_folder):
+        for n in tqdm(os.listdir(map_osm_folder), desc='Copy maps'):
             if os.path.splitext(n)[-1].replace('.', '') == \
                                 self.source_dataset_map_form:
                 map_osm_path = os.path.join(map_osm_folder, n)
@@ -417,8 +479,47 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                        self.label_object_rotation_angle,
                        box_head_point=box_head_point,
                        need_convert=self.need_convert))
+
+        # osm name
+        box = lanelet2.core.BoundingBox2d(
+            lanelet2.core.BasicPoint2d(
+                self.image_ego_pose_dict[image_name_new][3] - 150,
+                self.image_ego_pose_dict[image_name_new][4] - 150),
+            lanelet2.core.BasicPoint2d(
+                self.image_ego_pose_dict[image_name_new][3] + 150,
+                self.image_ego_pose_dict[image_name_new][4] + 150))
+        osmname = ''
+        for osm_name, lanelet_layer in self.lanelet_layers.items():
+            lanelets_inRegion = lanelet_layer.search(box)
+            for elem in lanelets_inRegion:
+                if lanelet2.geometry.distance(
+                        elem,
+                        lanelet2.core.BasicPoint2d(
+                            self.image_ego_pose_dict[image_name_new][3],
+                            self.image_ego_pose_dict[image_name_new][4])) == 0:
+                    # cur_lane = elem
+                    osmname = osm_name
+                    break
+            if osmname != '':
+                break
+            
+        # image_ego_pose
+        image_ego_pose = {
+            "latitude": self.image_ego_pose_dict[image_name_new][0],
+            "longitude": self.image_ego_pose_dict[image_name_new][1],
+            "elevation": self.image_ego_pose_dict[image_name_new][2],
+            "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
+            "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
+            "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
+            "attitude.x": self.image_ego_pose_dict[image_name_new][6],
+            "attitude.y": self.image_ego_pose_dict[image_name_new][7],
+            "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+            "position_type": self.image_ego_pose_dict[image_name_new][9],
+            "osmname": osmname,
+        }
+
         image = IMAGE(image_name, image_name_new, image_path, height, width,
-                      channels, object_list)
+                      channels, object_list, image_ego_pose)
         # 读取目标标注信息，输出读取的source annotation至temp annotation
         if image is None:
             process_output['fail_count'] += 1
