@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-02 14:00:47
+LastEditTime: 2022-09-14 13:53:03
 '''
 import json
 import math
@@ -471,6 +471,10 @@ class OBJECT(BOX, SEGMENTATION, KEYPOINTS):
 
         return
 
+
+class EGO_POSE:
+    def __init__(self) -> None:
+        pass
 
 class IMAGE:
     """图片类"""

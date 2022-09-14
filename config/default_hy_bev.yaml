@@ -1,32 +1,24 @@
 # 是否是NAS数据
 Save_in_nas: False
-
 # NAS ip
 Nas_ip: "192.168.0.88"
-
 # NAS username
 Nas_username: hy
-
 # NAS code
 Nas_password: "88888888"
-
 # 是否发送至训练服务器
 Scp_to_train_server: False
-
 # 训练服务器ip
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
 Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/self_map
-
 # 数据集输出路径
 Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/self_map_20220914
-
-# 标注车型（hq1, hq2, lt1, lt2）
-Annotation_car: hq1
-
-# 是否添加mask
-Draw_car_mask: True
+# 重命名前缀
+File_prefix: hymap
+# name delimiter(cityscapes need: "@")
+File_prefix_delimiter: "@"
 
 # 输入数据集类型:
 # CVAT_IMAGE_BEV_1, CVAT_IMAGE_BEV_2, CVAT_IMAGE_BEV_3_MAP, CVAT_IMAGE_BEV_NAS, TEMP_DATASET
@@ -35,34 +27,47 @@ Draw_car_mask: True
 # YOLO, COCO2017, BDD100K, TT100K, CCTSDB, LISA, KITTI, APOLLOSCAPE_LANE_SEGMENT,
 # TI_EDGEAILITE_AUTO_ANNOTATION
 Source_dataset_style: CVAT_IMAGE_BEV_3_MAP
-
 # 目标数据集类型：
 # NUSCENES, PYVA, CVT, HY_BEV
 # COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO
 Target_dataset_style: NUSCENES
 
+# 标注车型（hq1, hq2, lt1, lt2）
+Annotation_car: hq1
 # 目标数据集视角:
 Target_dataset_view: BEV
-
-# 重命名前缀
-File_prefix: dfgj
-
-# name delimiter(cityscapes need: "@")
-File_prefix_delimiter: "@"
-
+# 是否添加mask
+Draw_car_mask: True
 # 是否保存无训练目标图片
 Keep_no_object: False
+# 是否为二分类（backgound and object）:
+Two_class: True
+
+# 相机图片宽和高
+Camera_image_wh: 3200,1200
+# 标注图片宽和高
+# Label_image_wh: 3200,7200
+# 标注图片宽和高
+Label_image_wh: 3200,5600
+# 标注范围：前后左右（米）
+Label_range: 100,40,40,40
+# 调整标注范围：前后左右（米）
+Adjust_label_range: 80,40,40,40
+# 标注框旋转角度
+Label_object_rotation_angle: 90
+# 激光雷达相对于车辆后轴中心点偏移量
+Lida_to_vehicle_offset_xy:
+# 语义分割标注图片宽高
+Semantic_segmentation_label_image_wh: 512,512
 
 # 是否仅做统计
 Only_statistic: False
-
 # 是否统计标注目标距离
 Statistic_label_object_distance: True
 # 统计标注范围
 Statistic_label_distance: 120
 # 统计标注范围间隔
 Statistic_label_distance_statistic_segmentation: 3
-
 # 是否统计标注目标角度
 Statistic_label_object_angle: True
 # 统计标注范围
@@ -70,39 +75,12 @@ Statistic_label_angle: 360
 # 统计标注范围间隔
 Statistic_label_angle_statistic_segmentation: 15
 
-# 是否为二分类（backgound and object）:
-Two_class: True
-
-# 相机图片宽和高
-Camera_image_wh: 3200,1200
-
-# 标注图片宽和高
-# Label_image_wh: 3200,7200
-# 标注图片宽和高
-Label_image_wh: 3200,5600
-
-# 标注范围：前后左右（米）
-Label_range: 100,40,40,40
-
-# 调整标注范围：前后左右（米）
-Adjust_label_range: 80,40,40,40
-
-# 标注框旋转角度
-Label_object_rotation_angle: 90
-
-# 激光雷达相对于车辆后轴中心点偏移量
-Lida_to_vehicle_offset_xy:
-
-# 语义分割标注图片宽高
-Semantic_segmentation_label_image_wh: 512,512
-
 # 数据集划分比例
 # (train, val, test, redund)
 Target_dataset_divide_proportion: 1,0,0,0
 
 # 检测目标数据集标注文件
 Target_dataset_check_annotations_count: 10
-
 # 检测目标数据集输出是否为掩码
 Target_dataset_check_annotations_output_as_mask: True
 
