@@ -4,9 +4,8 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-06-30 22:39:50
+LastEditTime: 2022-09-13 10:09:12
 '''
-import enum
 import multiprocessing
 import shutil
 from PIL import Image
@@ -97,7 +96,7 @@ class NUSCENES(Dataset_Base):
 
     @staticmethod
     def annotation_check(dataset_instance: Dataset_Base) -> list:
-        """[读取CROSSVIEWTRANSFORMERS数据集图片类检测列表]
+        """[读取nuscenes数据集图片类检测列表]
 
         Args:
             dataset_instance (object): [数据集实例]
@@ -141,13 +140,13 @@ class NUSCENES(Dataset_Base):
         # generate nuscenes folders
         nuscenes_output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CROSSVIEWTRANSFORMERS', 'nuScenes'))  # 输出数据集文件夹
+                         'nuScenes'))  # 输出数据集文件夹
         print('Clean dataset folder!')
         shutil.rmtree(nuscenes_output_root)
         print('Create new folder:')
         nuscenes_output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CROSSVIEWTRANSFORMERS', 'nuScenes'))  # 输出数据集文件夹
+                         'nuScenes'))  # 输出数据集文件夹
         maps_folder_path = check_output_path(
             os.path.join(nuscenes_output_root, 'maps'))
         samples_folder_path = check_output_path(
@@ -346,16 +345,15 @@ class NUSCENES(Dataset_Base):
             open(os.path.join(v1_0_trainval_folder_path, 'scene.json'), 'w'))
 
         # 10. ego_pose.json
-
         pbar, update = multiprocessing_list_tqdm(
             total_annotation_path_list,
-            desc='Output target dataset annotation')
-        object_count_dict_multiprocessing = multiprocessing.Manager().dict()
+            desc='Count target dataset total object')
+        object_count_dict_multiprocessing = {}
         pool = multiprocessing.Pool(dataset_instance.workers)
         for image_index, temp_annotation_path in enumerate(
                 total_annotation_path_list):
             object_count_dict_multiprocessing.update({
-                index:
+                image_index:
                 pool.apply_async(func=dataset.__dict__[
                     dataset_instance.target_dataset_style].total_object_count,
                                  args=(dataset_instance, image_index,
@@ -369,7 +367,7 @@ class NUSCENES(Dataset_Base):
 
         object_count_dict = {}
         for key, value in object_count_dict_multiprocessing.items():
-            object_count_dict.update({key.get(): value.get()})
+            object_count_dict.update({key: value.get()})
 
         # 9. instance.json
         # 11. sample_annotation.json
@@ -379,21 +377,23 @@ class NUSCENES(Dataset_Base):
         # 15. generate nuscenes images 6400,2400 3*2
         pbar, update = multiprocessing_list_tqdm(
             total_annotation_path_list,
-            desc='Output target dataset annotation')
-        sample_information_dict = multiprocessing.Manager().dict()
+            desc='Extract target dataset annotation')
+        sample_information_dict_list = []
         pool = multiprocessing.Pool(dataset_instance.workers)
         for image_index, temp_annotation_path in enumerate(
                 total_annotation_path_list):
-            pool.apply_async(func=dataset.__dict__[
-                dataset_instance.target_dataset_style].extract_data,
-                             args=(dataset_instance, image_index,
-                                   temp_annotation_path, camera_name_list,
-                                   camera_image_folder_list, nbr_samples_count,
-                                   v1_0_trainval_folder_path, scene_token,
-                                   object_class_list, category_token_list,
-                                   attribute_token_list),
-                             callback=update,
-                             error_callback=err_call_back)
+            sample_information_dict_list.append(
+                pool.apply_async(
+                    func=dataset.__dict__[
+                        dataset_instance.target_dataset_style].extract_data,
+                    args=(dataset_instance, image_index, temp_annotation_path,
+                          camera_name_list, camera_image_folder_list,
+                          nbr_samples_count, v1_0_trainval_folder_path,
+                          scene_token, object_class_list, category_token_list,
+                          attribute_token_list,
+                          object_count_dict[image_index]),
+                    callback=update,
+                    error_callback=err_call_back))
         pool.close()
         pool.join()
         pbar.close()
@@ -419,14 +419,25 @@ class NUSCENES(Dataset_Base):
                      camera_image_folder_list: list, nbr_samples_count: int,
                      v1_0_trainval_folder_path: str, scene_token: str,
                      object_class_list: list, category_token_list: list,
-                     attribute_token_list: list) -> None:
-        """创建NUSCENES格式数据集
+                     attribute_token_list: list, object_count: int) -> dict:
+        """获取bev标注结果信息
 
         Args:
             dataset_instance (Dataset_Base): 数据集信息字典
+            image_index (int): _description_
             temp_annotation_path (str): 暂存标注路径
             camera_name_list (list): 相机名称列表
             camera_image_folder_list (list): 相机图片文件夹列表
+            nbr_samples_count (int): _description_
+            v1_0_trainval_folder_path (str): _description_
+            scene_token (str): _description_
+            object_class_list (list): _description_
+            category_token_list (list): _description_
+            attribute_token_list (list): _description_
+            object_count (int): _description_
+
+        Returns:
+            dict: _description_
         """
 
         image = dataset_instance.TEMP_LOAD(dataset_instance,
@@ -440,6 +451,8 @@ class NUSCENES(Dataset_Base):
 
         # generate nuscenes images 6400,2400 3*2
         total_concate_image = cv2.imread(image.image_path)
+        dataset_instance.camera_image_wh[0] = total_concate_image.shape[1]
+        dataset_instance.camera_image_wh[1] = total_concate_image.shape[0]
         CAM_BACK_image = total_concate_image[
             int(dataset_instance.camera_image_wh[1] / 2 *
                 1):int(dataset_instance.camera_image_wh[1]),
@@ -709,4 +722,4 @@ class NUSCENES(Dataset_Base):
 
         # 14. calibrated_sensor.json
 
-        return
+        return {}

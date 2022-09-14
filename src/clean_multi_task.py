@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-09-02 14:05:48
+LastEditTime: 2022-09-07 09:57:49
 '''
 import argparse
 import time
@@ -53,13 +53,15 @@ def clean_multi_task(dataset_config: dict) -> None:
 if __name__ == "__main__":
     time_start = time.time()
     parser = argparse.ArgumentParser(prog='clean.py')
-    parser.add_argument(
-        '--config',
-        '--c',
-        dest='config',
-        default=['config/default_nas_0.yaml', 'config/default_nas_1.yaml'],
-        type=list,
-        help='dataset config file path list')
+    parser.add_argument('--config',
+                        '--c',
+                        dest='config',
+                        default=[
+                            'config/0524dfgj.yaml', 'config/0524nsh.yaml',
+                            'config/0730wd2jszx.yaml'
+                        ],
+                        type=list,
+                        help='dataset config file path list')
     parser.add_argument(
         '--workers',
         '--w',

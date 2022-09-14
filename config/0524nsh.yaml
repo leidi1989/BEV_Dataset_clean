@@ -82,7 +82,7 @@ Camera_image_wh: 0,0
 Label_image_wh: 3200,5600
 
 # 标注范围：前后左右（米）
-Label_range: 100,80,40,40
+Label_range: 100,40,40,40
 
 # 调整标注范围：前后左右（米）
 Adjust_label_range: 80,40,40,40
