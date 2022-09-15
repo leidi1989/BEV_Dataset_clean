@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-14 19:51:36
+LastEditTime: 2022-09-15 10:30:19
 '''
 import json
 import math
@@ -558,6 +558,14 @@ class IMAGE:
         else:
             self.object_exist_flag = False
         self.image_ego_dict = image_ego_dict_in
+        if image_ego_dict_in == None:
+            self.image_ego_dict = {}
+        else:
+            self.image_ego_dict = image_ego_dict_in
+        if len(self.image_ego_dict):
+            self.image_ego_flag = True
+        else:
+            self.image_ego_flag = False
 
     def object_class_modify_and_pixel_limit(self,
                                             dataset_instance: object) -> None:
@@ -747,6 +755,7 @@ class IMAGE:
 
         if self == None:
             return False
+        # base infomation
         annotation = {
             'name': self.file_name_new,
             'base_information': {
@@ -764,6 +773,12 @@ class IMAGE:
                 'timeofday': 'daytime'
             }
         }
+        # image_ego
+        if self.image_ego_flag:
+            annotation.update({'image_ego': self.image_ego_dict})
+        else:
+            annotation.update({'image_ego': {}})
+        # object
         id = 1
         object_count = 0
         for object in self.object_list:
