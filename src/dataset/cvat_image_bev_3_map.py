@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-15 20:29:28
+LastEditTime: 2022-09-15 21:05:55
 '''
 import multiprocessing
 import shutil
@@ -395,7 +395,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             # pbar.close()
 
             # debug
-            for annotation in root:
+            for annotation in tqdm(root, desc='Total images', leave=False):
                 if annotation.tag != 'image':
                     continue
                 self.load_image_annotation(annotation, process_output)
@@ -514,7 +514,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                        box_head_point=box_head_point,
                        need_convert=self.need_convert))
         # osm name
-        osmname = ''
+        osm_file_name = ''
         if self.get_map:
             # utm_offset =
             box = lanelet2.core.BoundingBox2d(
@@ -524,25 +524,43 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 lanelet2.core.BasicPoint2d(
                     self.image_ego_pose_dict[image_name_new][3] + 150,
                     self.image_ego_pose_dict[image_name_new][4] + 150))
-            for osm_name, lanelet_layer in (self.lanelet_layers).items():
+            for temp_osm_name, lanelet_layer in (self.lanelet_layers).items():
                 lanelets_inRegion = lanelet_layer.search(box)
                 if len(lanelets_inRegion):
                     for elem in lanelets_inRegion:
                         if lanelet2.geometry.distance(
                                 elem,
                                 lanelet2.core.BasicPoint2d(
-                                    self.image_ego_pose_dict[image_name_new][3],
+                                    self.image_ego_pose_dict[image_name_new]
+                                    [3],
                                     self.image_ego_pose_dict[image_name_new]
                                     [4])) == 0:
-                            osmname = osm_name
+                            osm_file_name = temp_osm_name
                             break
-            if self.delete_no_map and osmname == '':
-                print('{} no map, has been delete.'.format(
-                    image.image_name_new))
-                if not self.only_statistic:
-                    os.remove(image.image_path)
-                process_output['no_object'] += 1
-                process_output['fail_count'] += 1
+            all_Lines = {}
+            contours_id = []
+            lanes_id = []
+            lineString_inRegion_src = self.lanelet_layers[osmname].search(box)
+            for elem in lineString_inRegion_src:  #提取所有车道线id和点集（无重复）
+                if elem.id not in all_Lines:
+                    Line_points = []
+                    if 'roadside' in elem.attributes.keys():
+                        if elem.attributes[
+                                'roadside'] == 'true':  #'roadside' not in elem.leftBound.attributes.keys() or elem.leftBound.attributes['roadside'] !='true'
+                            contours_id.append(elem.id)
+                        elif elem.attributes['roadside'] == 'false':
+                            lanes_id.append(elem.id)
+                        for point in elem:
+                            Line_points.append([point.x, point.y])
+                            all_Lines[elem.id] = Line_points
+                    elif 'vguideline' in elem.attributes.keys():
+                        pass
+            if self.delete_no_map and osm_file_name == '':
+                print('{} no map, has been delete.'.format(image_name_new))
+                # if not self.only_statistic:
+                #     os.remove(image_path)
+                # process_output['no_object'] += 1
+                # process_output['fail_count'] += 1
                 return
 
         # image_ego_pose
@@ -557,7 +575,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
             "attitude.z": self.image_ego_pose_dict[image_name_new][8],
             "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
-            "osmname": osmname,
+            "osm_file_name": osm_file_name,
         }
 
         image = IMAGE(image_name, image_name_new, image_path, height, width,
@@ -1104,3 +1122,46 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 shutil.copy(annotations_input_path, annotations_output_path)
 
         return
+
+
+# utm2bev(all_Lines,utm_x,utm_y,att_z)
+
+
+def utm_to_bev(lane_lines_utm: dict, utm_x: float, utm_y: float, att_z: float,
+               bev_image_w: int, bev_image_h: int, bev_distance_front: int,
+               bev_distance_back: int) -> dict:  #世界坐标系转车身坐标系转像素坐标系
+    """utm坐标转换为检测距离内的bev图像坐标
+
+    Args:
+        lane_lines_utm (dict): utm线段坐标字典
+        utm_x (float): _description_
+        utm_y (float): _description_
+        att_z (float): _description_
+        bev_image_w (int): _description_
+        bev_image_h (int): _description_
+        bev_distance_front (int): _description_
+        bev_distance_back (int): _description_
+
+    Returns:
+        dict: _description_
+    """    
+    lane_lines_bev_image = {}
+    for id, line in lane_lines_utm.items():
+        temps = []
+        for point in line:  #世界坐标系转车身坐标系转像素坐标系
+            #世界坐标系转车身坐标系
+            '''
+            pose[3],pose[4],pose[8]对应车辆后轴中心的x, y, position_type(即车辆的转向角theta)
+            '''
+            x_ = (point[0] - utm_x) * np.cos(att_z) + (point[1] -
+                                                       utm_y) * np.sin(att_z)
+            y_ = (point[1] - utm_y) * np.cos(att_z) - (point[0] -
+                                                       utm_x) * np.sin(att_z)
+            #车身坐标系转像素坐标系
+            point[0] = int(x_ * 400 / 60) + 200
+            point[1] = int(y_ * 400 / 60) + 100
+            temps.append([point[0], 200 - point[1]])
+            # temps.append(np.asarray(([point[0],200-point[1]]),np.int32))
+        lane_lines_bev_image[id] = temps
+        
+    return lane_lines_bev_image

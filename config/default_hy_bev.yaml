@@ -38,8 +38,8 @@ Annotation_car: hq1
 Target_dataset_view: BEV
 # 是否包含地图
 Get_map: True
-# 是否删除无地图图片
-Delete_no_map: False
+# 是否删除无地图样本
+Delete_no_map: True
 # lat_lon_origin城市
 Lat_lon_origin_city: wuhan
 # 是否添加mask
