@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-15 20:23:00
+LastEditTime: 2022-09-16 18:10:34
 '''
 import ftplib
 import json
@@ -223,6 +223,13 @@ class Dataset_Base:
             (dataset_config['Semantic_segmentation_label_image_wh'].split(','))
         ]
         self.keep_no_object = dataset_config['Keep_no_object']
+        self.label_image_self_car_uv = [int(
+            self.label_image_wh[0] *
+            (self.label_range[2] /
+             (self.label_range[2] + self.label_range[3]))),
+            int(self.label_image_wh[1] *
+            (self.label_range[0] / (self.label_range[0] + self.label_range[1])))
+        ]
 
         # 声明set类别统计pandas字典
         self.temp_divide_object_count_dataframe_dict = {}

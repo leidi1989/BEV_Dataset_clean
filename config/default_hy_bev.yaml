@@ -52,11 +52,12 @@ Two_class: True
 # 相机图片宽和高
 Camera_image_wh: 3200,1200
 # 标注图片宽和高
-# Label_image_wh: 3200,7200
+Label_image_wh: 3200,7200
 # 标注图片宽和高
-Label_image_wh: 3200,5600
+# Label_image_wh: 3200,5600
 # 标注范围：前后左右（米）
-Label_range: 100,40,40,40
+# Label_range: 100,40,40,40
+Label_range: 100,80,40,40
 # 调整标注范围：前后左右（米）
 Adjust_label_range: 80,40,40,40
 # 标注框旋转角度
