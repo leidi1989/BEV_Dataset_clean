@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-16 19:16:54
+LastEditTime: 2022-09-16 19:24:29
 '''
 from lzma import is_check_supported
 import multiprocessing
@@ -1200,8 +1200,8 @@ def utm_to_bev(lane_lines_utm: dict, utm_x: float, utm_y: float, att_z: float,
             v = int(label_image_self_car_uv[1] - x_ * label_image_wh[1] /
                     (label_range[0] + label_range[1]))
             # clip
-            u = int(np.clip(u, 0, label_image_wh[0]))
-            v = int(np.clip(v, 0, label_image_wh[1]))
+            # u = int(np.clip(u, 0, label_image_wh[0]))
+            # v = int(np.clip(v, 0, label_image_wh[1]))
 
             temp_line.append([u, v])
         lane_lines_bev_image[id] = temp_line
