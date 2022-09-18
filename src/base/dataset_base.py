@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-18 17:12:32
+LastEditTime: 2022-09-18 17:13:40
 '''
 import ftplib
 import json
@@ -2071,7 +2071,8 @@ class Dataset_Base:
                 except EOFError as e:
                     print('未知错误: %s', e)
                 object_list.append(one_object)
-
+                
+            # TODO
             if dataset_instance.get_local_map:
                 # image_ego_pose
                 image_ego_pose = data['image_ego_pose']
