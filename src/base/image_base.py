@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-18 17:10:37
+LastEditTime: 2022-09-18 17:15:55
 '''
 import json
 import math
@@ -586,9 +586,9 @@ class IMAGE:
         else:
             self.image_ego_pose_dict = image_ego_pose_dict_in
         if len(self.image_ego_pose_dict):
-            self.image_ego_flag = True
+            self.image_ego_pose_flag = True
         else:
-            self.image_ego_flag = False
+            self.image_ego_pose_flag = False
         self.image_time_stamp = image_time_stamp_in
         if laneline_list_in == None:
             self.laneline_list = []
@@ -810,7 +810,7 @@ class IMAGE:
         }
 
         # image_ego
-        if self.image_ego_flag:
+        if self.image_ego_pose_flag:
             annotation.update({'image_ego_pose': self.image_ego_pose_dict})
         else:
             annotation.update({'image_ego_pose': {}})
