@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-18 16:16:02
+LastEditTime: 2022-09-18 17:12:32
 '''
 import ftplib
 import json
@@ -25,7 +25,7 @@ from tqdm import tqdm
 from utils import image_form_transform
 from utils.utils import *
 
-from .image_base import IMAGE, OBJECT
+from .image_base import IMAGE, OBJECT, LANELINE
 
 matplotlib.rc("font", family='AR PL UMing CN')
 plt.switch_backend('agg')
@@ -223,12 +223,13 @@ class Dataset_Base:
             (dataset_config['Semantic_segmentation_label_image_wh'].split(','))
         ]
         self.keep_no_object = dataset_config['Keep_no_object']
-        self.label_image_self_car_uv = [int(
-            self.label_image_wh[0] *
-            (self.label_range[2] /
-             (self.label_range[2] + self.label_range[3]))),
+        self.label_image_self_car_uv = [
+            int(self.label_image_wh[0] *
+                (self.label_range[2] /
+                 (self.label_range[2] + self.label_range[3]))),
             int(self.label_image_wh[1] *
-            (self.label_range[0] / (self.label_range[0] + self.label_range[1])))
+                (self.label_range[0] /
+                 (self.label_range[0] + self.label_range[1])))
         ]
 
         # 声明set类别统计pandas字典
@@ -2070,8 +2071,27 @@ class Dataset_Base:
                 except EOFError as e:
                     print('未知错误: %s', e)
                 object_list.append(one_object)
-            image = IMAGE(image_name, image_name, image_path, height, width,
-                          channels, object_list)
+
+            if dataset_instance.get_local_map:
+                # image_ego_pose
+                image_ego_pose = data['image_ego_pose']
+                image_time_stamp = dataset_instance.image_time_stamp_dict[
+                    image_name]
+                laneline_list = []
+                for laneline in data['frames'][0]['lanelines']:
+                    laneline_list.append(
+                        LANELINE(laneline_id_in=laneline['id'],
+                                 laneline_class_in=laneline['laneline_class'],
+                                 laneline_points_utm_in=laneline[
+                                     'laneline_points_utm'],
+                                 laneline_points_label_image_in=laneline[
+                                     'laneline_points_label_image']))
+                image = IMAGE(image_name, image_name, image_path, height,
+                              width, channels, object_list, image_ego_pose,
+                              image_time_stamp, laneline_list)
+            else:
+                image = IMAGE(image_name, image_name, image_path, height,
+                              width, channels, object_list)
             f.close()
 
         return image

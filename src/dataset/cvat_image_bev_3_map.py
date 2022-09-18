@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-18 16:21:44
+LastEditTime: 2022-09-18 17:09:15
 '''
 from lzma import is_check_supported
 import multiprocessing
@@ -578,7 +578,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
         # local map
         image_ego_pose = None
-        image_time_stamp = ''
         laneline_list = None
         if self.get_local_map:
             # osm name
@@ -640,24 +639,31 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             for n, elem in enumerate(
                     linestring_inregion_src):  #提取所有车道线id和点集（无重复）
                 if elem.id not in local_map_total_line_id:
-                    line_points = []
+                    laneline_points_utm = []
                     if 'roadside' in elem.attributes.keys():
                         if elem.attributes['roadside'] == 'true':
                             laneline_class = 'roadside'
                         elif elem.attributes['roadside'] == 'false':
                             laneline_class = 'line'
                         for point in elem:
-                            line_points.append([point.x, point.y])
+                            laneline_points_utm.append([point.x, point.y])
                         # elif 'vguideline' in elem.attributes.keys():
                         #     pass
                         laneline_list.append(
                             LANELINE(
-                                n, laneline_class, line_points,
-                                self.image_ego_pose_dict[image_name_new][3],
-                                self.image_ego_pose_dict[image_name_new][4],
-                                self.image_ego_pose_dict[image_name_new][8],
-                                self.label_image_wh, self.label_range,
-                                self.label_image_self_car_uv))
+                                laneline_id_in=n,
+                                laneline_class_in=laneline_class,
+                                laneline_points_utm_in=laneline_points_utm,
+                                utm_x=self.image_ego_pose_dict[image_name_new]
+                                [3],
+                                utm_y=self.image_ego_pose_dict[image_name_new]
+                                [4],
+                                att_z=self.image_ego_pose_dict[image_name_new]
+                                [8],
+                                label_image_wh=self.label_image_wh,
+                                label_range=self.label_range,
+                                label_image_self_car_uv=self.
+                                label_image_self_car_uv))
                         local_map_total_line_id.append(elem.id)
 
             # # show laneline

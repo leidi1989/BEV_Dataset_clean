@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-18 16:41:54
+LastEditTime: 2022-09-18 17:10:37
 '''
 import json
 import math
@@ -475,16 +475,29 @@ class OBJECT(BOX, SEGMENTATION, KEYPOINTS):
 
 class LANELINE:
 
-    def __init__(self, laneline_id_in: int, laneline_class_in: str,
-                 laneline_points_in: list, utm_x: float, utm_y: float,
-                 att_z: float, label_image_wh: list, label_range: list,
-                 label_image_self_car_uv: list) -> None:
+    def __init__(self,
+                 laneline_id_in: int,
+                 laneline_class_in: str,
+                 laneline_points_utm_in: list = None,
+                 laneline_points_label_image_in: list = None,
+                 utm_x: float = 0,
+                 utm_y: float = 0,
+                 att_z: float = 0,
+                 label_image_wh: list = None,
+                 label_range: list = None,
+                 label_image_self_car_uv: list = None) -> None:
         self.laneline_id = laneline_id_in
         self.laneline_class = laneline_class_in
-        self.laneline_points_utm = laneline_points_in
-        self.laneline_points_label_image = self.utm_to_bev(
-            self.laneline_points_utm, utm_x, utm_y, att_z, label_image_wh,
-            label_range, label_image_self_car_uv)
+        if laneline_points_utm_in is not None:
+            self.laneline_points_utm = laneline_points_utm_in
+            if laneline_points_label_image_in is None:
+                self.laneline_points_label_image = self.utm_to_bev(
+                    self.laneline_points_utm, utm_x, utm_y, att_z,
+                    label_image_wh, label_range, label_image_self_car_uv)
+            else:
+                self.laneline_points_label_image = laneline_points_label_image_in
+        else:
+            self.laneline_points_label_image = laneline_points_label_image_in
 
     def utm_to_bev(self, laneline_points_utm: dict, utm_x: float, utm_y: float,
                    att_z: float, label_image_wh: list, label_range: list,
@@ -533,7 +546,7 @@ class IMAGE:
                  width_in: int = 0,
                  channels_in: int = 0,
                  object_list_in: list = None,
-                 image_ego_dict_in: dict = None,
+                 image_ego_pose_dict_in: dict = None,
                  image_time_stamp_in: str = '',
                  laneline_list_in: list = None) -> None:
         """图片类
@@ -546,7 +559,7 @@ class IMAGE:
             width_in (int, optional): 图片宽. Defaults to 0.
             channels_in (int, optional): 图片通道数. Defaults to 0.
             object_list_in (list, optional): 标注目标列表. Defaults to None.
-            image_ego_dict_in (dict, optional): 图片自车pose. Defaults to None.
+            image_ego_pose_dict_in (dict, optional): 图片自车pose. Defaults to None.
             image_time_stamp_in (str, optional): 图片时间戳. Defaults to ''.
             laneline_list_in (list, optional): 车道线列表. Defaults to None.
         """
@@ -567,12 +580,12 @@ class IMAGE:
             self.object_exist_flag = True
         else:
             self.object_exist_flag = False
-        self.image_ego_dict = image_ego_dict_in
-        if image_ego_dict_in == None:
-            self.image_ego_dict = {}
+        self.image_ego_pose_dict = image_ego_pose_dict_in
+        if image_ego_pose_dict_in == None:
+            self.image_ego_pose_dict = {}
         else:
-            self.image_ego_dict = image_ego_dict_in
-        if len(self.image_ego_dict):
+            self.image_ego_pose_dict = image_ego_pose_dict_in
+        if len(self.image_ego_pose_dict):
             self.image_ego_flag = True
         else:
             self.image_ego_flag = False
@@ -798,9 +811,9 @@ class IMAGE:
 
         # image_ego
         if self.image_ego_flag:
-            annotation.update({'image_ego': self.image_ego_dict})
+            annotation.update({'image_ego_pose': self.image_ego_pose_dict})
         else:
-            annotation.update({'image_ego': {}})
+            annotation.update({'image_ego_pose': {}})
 
         # object
         object_id = 1
