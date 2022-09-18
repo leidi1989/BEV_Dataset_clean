@@ -30,7 +30,7 @@ Source_dataset_style: CVAT_IMAGE_BEV_3_MAP
 # 目标数据集类型：
 # NUSCENES, PYVA, CVT, HY_BEV
 # COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO
-Target_dataset_style: NUSCENES
+Target_dataset_style: HY_BEV
 
 # 标注车型（hq1, hq2, lt1, lt2）
 Annotation_car: hq1
