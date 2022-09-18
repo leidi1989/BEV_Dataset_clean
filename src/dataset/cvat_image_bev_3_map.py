@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-16 19:24:29
+LastEditTime: 2022-09-18 16:21:44
 '''
 from lzma import is_check_supported
 import multiprocessing
@@ -38,6 +38,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_maps'))
         self.source_dataset_pose_folder = check_output_path(
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_poses'))
+        self.source_dataset_time_folder = check_output_path(
+            os.path.join(opt['Dataset_output_folder'], 'source_dataset_times'))
         self.source_dataset_image_form_list = ['jpg', 'png']
         self.source_dataset_annotation_form = 'xml'
         self.source_dataset_map_form = 'osm'
@@ -46,6 +48,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         )
         self.source_dataset_map_count = self.get_source_dataset_map_count()
         self.image_ego_pose_dict = self.get_image_ego_pose()
+        self.image_time_stamp_dict = self.get_image_time_stamp()
         self.lat_lon_origin = {
             'wuhan': {
                 'lat': 30.425457029885372151,
@@ -56,6 +59,10 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 'lon': 114.3779897
             },
         }
+        self.utm_offset = int(
+            math.sqrt(
+                math.pow((self.label_range[0] + self.label_range[1]), 2) +
+                math.pow((self.label_range[2] + self.label_range[3]), 2)))
         self.lanelet_layers = {}
         self.lanelet_linestringlayer = {}
         # self.camera_name_list = [
@@ -125,9 +132,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             batch_folder = os.path.join(sync_data_folder, n)
             if os.path.isdir(batch_folder):
                 annotation_bev_image_list = sorted(
-                        os.listdir(
-                            os.path.join(batch_folder,
-                                         'annotation_bev_image')))
+                    os.listdir(
+                        os.path.join(batch_folder, 'annotation_bev_image')))
                 for index, m in enumerate(annotation_bev_image_list):
                     poses = []
                     with open(
@@ -158,6 +164,51 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             j.write(json.dumps(image_ego_pose_dict))
 
         return image_ego_pose_dict
+
+    def get_image_time_stamp(self) -> dict:
+        """获取图片时间戳
+
+        Returns:
+            dict: 图片时间戳字典
+        """
+        print('\n Start get image time:')
+        sync_data_folder = os.path.join(self.dataset_input_folder, 'sync_data')
+        image_time_stamp_dict = {}
+        for n in tqdm(os.listdir(sync_data_folder), desc='Get image time'):
+            batch_folder = os.path.join(sync_data_folder, n)
+            if os.path.isdir(batch_folder):
+                annotation_bev_image_list = sorted(
+                    os.listdir(
+                        os.path.join(batch_folder, 'annotation_bev_image')))
+                for index, m in enumerate(annotation_bev_image_list):
+                    time_stamp_list = []
+                    with open(
+                            os.path.join(
+                                os.path.join(batch_folder, 'times.txt')),
+                            "r") as f:
+                        for line in f:
+                            data = line.replace('\n', '')
+                            time_stamp_list.append(data)
+                    if os.path.splitext(m)[-1].replace('.', '') in \
+                                self.source_dataset_image_form_list:
+                        image_name = str(m).split(os.sep)[-1].split(
+                            '.')[0] + '.' + self.temp_image_form
+                        image_name_new = self.file_prefix + image_name
+                        if 0 == index:
+                            image_time_stamp_dict.update(
+                                {image_name_new: time_stamp_list[index]})
+                        else:
+                            image_time_stamp_dict.update({
+                                image_name_new:
+                                time_stamp_list[index * 5 - 1]
+                            })
+
+        image_time_stamp_json_path = os.path.join(
+            self.source_dataset_time_folder, 'image_time_stamp.json')
+        with open(image_time_stamp_json_path, "w+") as j:
+            j.write(json.dumps(image_time_stamp_dict))
+
+        return image_time_stamp_dict
 
     def get_lanelet_layers(self) -> dict:
         """获取lanelet地图
@@ -440,6 +491,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         image_path = os.path.join(self.temp_images_folder, image_name_new)
         label_image_path = os.path.join(
             self.source_dataset_annotation_image_folder, image_name_new)
+        image_time_stamp = self.image_time_stamp_dict[image_name_new]
         channels = 0
         if not self.only_statistic:
             if not os.path.exists(image_path):
@@ -492,12 +544,12 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             clss = clss.replace(' ', '').lower()
             if clss not in self.total_task_source_class_list:
                 continue
-            box_xywh = []
-            x = int(float(obj.attrib['xtl']))
-            y = int(float(obj.attrib['ytl']))
-            w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
-            h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
-            box_xywh = [x, y, w, h]
+            box_xywh = [
+                int(float(obj.attrib['xtl'])),
+                int(float(obj.attrib['ytl'])),
+                int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
+                int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+            ]
             box_xtlytlxbrybr = [
                 float(obj.attrib['xtl']),
                 float(obj.attrib['ytl']),
@@ -523,22 +575,27 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                        self.label_object_rotation_angle,
                        box_head_point=box_head_point,
                        need_convert=self.need_convert))
-        # osm name
-        osm_file_name = ''
-        if self.get_map:
-            utm_offset = int(
-                math.sqrt(
-                    math.pow((self.label_range[0] + self.label_range[1]), 2) +
-                    math.pow((self.label_range[2] + self.label_range[3]), 2)))
-            box = lanelet2.core.BoundingBox2d(
+
+        # local map
+        image_ego_pose = None
+        image_time_stamp = ''
+        laneline_list = None
+        if self.get_local_map:
+            # osm name
+            osm_file_name = ''
+            local_map_vision_box = lanelet2.core.BoundingBox2d(
                 lanelet2.core.BasicPoint2d(
-                    self.image_ego_pose_dict[image_name_new][3] - utm_offset,
-                    self.image_ego_pose_dict[image_name_new][4] - utm_offset),
+                    self.image_ego_pose_dict[image_name_new][3] -
+                    self.utm_offset,
+                    self.image_ego_pose_dict[image_name_new][4] -
+                    self.utm_offset),
                 lanelet2.core.BasicPoint2d(
-                    self.image_ego_pose_dict[image_name_new][3] + utm_offset,
-                    self.image_ego_pose_dict[image_name_new][4] + utm_offset))
+                    self.image_ego_pose_dict[image_name_new][3] +
+                    self.utm_offset,
+                    self.image_ego_pose_dict[image_name_new][4] +
+                    self.utm_offset))
             for temp_osm_name, lanelet_layer in (self.lanelet_layers).items():
-                lanelets_inRegion = lanelet_layer.search(box)
+                lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
                 if len(lanelets_inRegion):
                     for elem in lanelets_inRegion:
                         if lanelet2.geometry.distance(
@@ -559,64 +616,70 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 # process_output['fail_count'] += 1
                 return
 
-            # 获取map
-            all_lines = {}
-            contours_id = []
-            lanes_id = []
+            # image_ego_pose
+            image_ego_pose = {
+                "latitude": self.image_ego_pose_dict[image_name_new][0],
+                "longitude": self.image_ego_pose_dict[image_name_new][1],
+                "elevation": self.image_ego_pose_dict[image_name_new][2],
+                "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
+                "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
+                "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
+                "attitude.x": self.image_ego_pose_dict[image_name_new][6],
+                "attitude.y": self.image_ego_pose_dict[image_name_new][7],
+                "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+                "position_type":
+                int(self.image_ego_pose_dict[image_name_new][9]),
+                "osm_file_name": osm_file_name,
+            }
+
+            # 获取local map
+            laneline_list = []
             linestring_inregion_src = self.lanelet_linestringlayer[
-                osm_file_name].search(box)
-            for elem in linestring_inregion_src:  #提取所有车道线id和点集（无重复）
-                if elem.id not in all_lines:
-                    Line_points = []
+                osm_file_name].search(local_map_vision_box)
+            local_map_total_line_id = []
+            for n, elem in enumerate(
+                    linestring_inregion_src):  #提取所有车道线id和点集（无重复）
+                if elem.id not in local_map_total_line_id:
+                    line_points = []
                     if 'roadside' in elem.attributes.keys():
-                        if elem.attributes[
-                                'roadside'] == 'true':  #'roadside' not in elem.leftBound.attributes.keys() or elem.leftBound.attributes['roadside'] !='true'
-                            contours_id.append(elem.id)
+                        if elem.attributes['roadside'] == 'true':
+                            laneline_class = 'roadside'
                         elif elem.attributes['roadside'] == 'false':
-                            lanes_id.append(elem.id)
+                            laneline_class = 'line'
                         for point in elem:
-                            Line_points.append([point.x, point.y])
-                            all_lines[elem.id] = Line_points
-                    # elif 'vguideline' in elem.attributes.keys():
-                    #     pass
-            all_lines_label_image = utm_to_bev(
-                all_lines, self.image_ego_pose_dict[image_name_new][3],
-                self.image_ego_pose_dict[image_name_new][4],
-                self.image_ego_pose_dict[image_name_new][8],
-                self.label_image_wh, self.label_range,
-                self.label_image_self_car_uv)
-            camera_image = cv2.imread(image_path)
-            label_image = cv2.imread(label_image_path)
-            lane_lines = []
-            for lane_id in lanes_id:
-                lane_lines.append(
-                    np.array(all_lines_label_image[lane_id], np.int32))
-            cv2.polylines(label_image,
-                          lane_lines,
-                          isClosed=False,
-                          color=(255, 255, 255),
-                          thickness=20)
-            label_image_concate = np.vstack((camera_image, label_image))
-            label_image_concate = cv2.resize(label_image_concate, [640, 1680])
-            cv2.imshow('label image', label_image_concate)
-            cv2.waitKey(0)
-        # image_ego_pose
-        image_ego_pose = {
-            "latitude": self.image_ego_pose_dict[image_name_new][0],
-            "longitude": self.image_ego_pose_dict[image_name_new][1],
-            "elevation": self.image_ego_pose_dict[image_name_new][2],
-            "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
-            "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
-            "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
-            "attitude.x": self.image_ego_pose_dict[image_name_new][6],
-            "attitude.y": self.image_ego_pose_dict[image_name_new][7],
-            "attitude.z": self.image_ego_pose_dict[image_name_new][8],
-            "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
-            "osm_file_name": osm_file_name,
-        }
+                            line_points.append([point.x, point.y])
+                        # elif 'vguideline' in elem.attributes.keys():
+                        #     pass
+                        laneline_list.append(
+                            LANELINE(
+                                n, laneline_class, line_points,
+                                self.image_ego_pose_dict[image_name_new][3],
+                                self.image_ego_pose_dict[image_name_new][4],
+                                self.image_ego_pose_dict[image_name_new][8],
+                                self.label_image_wh, self.label_range,
+                                self.label_image_self_car_uv))
+                        local_map_total_line_id.append(elem.id)
+
+            # # show laneline
+            # camera_image = cv2.imread(image_path)
+            # label_image = cv2.imread(label_image_path)
+            # lane_lines = []
+            # for laneline in laneline_list:
+            #     lane_lines.append(
+            #         np.array(laneline.laneline_points_label_image, np.int32))
+            # cv2.polylines(label_image,
+            #               lane_lines,
+            #               isClosed=False,
+            #               color=(255, 255, 255),
+            #               thickness=20)
+            # label_image_concate = np.vstack((camera_image, label_image))
+            # label_image_concate = cv2.resize(label_image_concate, [640, 1680])
+            # cv2.imshow('label image', label_image_concate)
+            # cv2.waitKey(0)
 
         image = IMAGE(image_name, image_name_new, image_path, height, width,
-                      channels, object_list, image_ego_pose)
+                      channels, object_list, image_ego_pose, image_time_stamp,
+                      laneline_list)
         # 读取目标标注信息，输出读取的source annotation至temp annotation
         if image is None:
             process_output['fail_count'] += 1
@@ -626,14 +689,14 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             image.file_name_new + '.' + self.temp_annotation_form)
         image.object_class_modify(self)
         image.object_pixel_limit(self)
-        if 0 == len(image.object_list) and not self.keep_no_object:
-            print('{} no object, has been delete.'.format(
-                image.image_name_new))
-            if not self.only_statistic:
-                os.remove(image.image_path)
-            process_output['no_object'] += 1
-            process_output['fail_count'] += 1
-            return
+        # if 0 == len(image.object_list) and not self.keep_no_object:
+        #     print('{} no object, has been delete.'.format(
+        #         image.image_name_new))
+        #     if not self.only_statistic:
+        #         os.remove(image.image_path)
+        #     process_output['no_object'] += 1
+        #     process_output['fail_count'] += 1
+        #     return
         if image.output_temp_annotation(temp_annotation_output_path):
             process_output['temp_file_name_list'].append(image.file_name_new)
             process_output['success_count'] += 1
@@ -1159,51 +1222,3 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 shutil.copy(annotations_input_path, annotations_output_path)
 
         return
-
-
-# utm2bev(all_Lines,utm_x,utm_y,att_z)
-
-
-def utm_to_bev(lane_lines_utm: dict, utm_x: float, utm_y: float, att_z: float,
-               label_image_wh: list, label_range: list,
-               label_image_self_car_uv: list) -> dict:  #世界坐标系转车身坐标系转像素坐标系
-    """utm坐标转换为检测距离内的bev图像坐标
-
-    Args:
-        lane_lines_utm (dict): utm线段坐标字典
-        utm_x (float): utm_x
-        utm_y (float): utm_y
-        att_z (float): att_z
-        label_image_wh (list): 标注图片宽高
-        label_range (list): 标注范围前后左右
-        label_image_self_car_uv (list): 租车图像坐标
-
-    Returns:
-        dict: lane_lines_bev_image
-    """
-
-    lane_lines_bev_image = {}
-    for id, line in lane_lines_utm.items():
-        temp_line = []
-        for point in line:  #世界坐标系转车身坐标系转像素坐标系
-            #世界坐标系转车身坐标系
-            '''
-            pose[3],pose[4],pose[8]对应车辆后轴中心的x, y, position_type(即车辆的转向角theta)
-            '''
-            x_ = (point[0] - utm_x) * np.cos(att_z) + (point[1] -
-                                                       utm_y) * np.sin(att_z)
-            y_ = (point[1] - utm_y) * np.cos(att_z) - (point[0] -
-                                                       utm_x) * np.sin(att_z)
-            #车身坐标系转像素坐标系
-            u = int(label_image_self_car_uv[0] - y_ * label_image_wh[0] /
-                    (label_range[2] + label_range[3]))
-            v = int(label_image_self_car_uv[1] - x_ * label_image_wh[1] /
-                    (label_range[0] + label_range[1]))
-            # clip
-            # u = int(np.clip(u, 0, label_image_wh[0]))
-            # v = int(np.clip(v, 0, label_image_wh[1]))
-
-            temp_line.append([u, v])
-        lane_lines_bev_image[id] = temp_line
-
-    return lane_lines_bev_image

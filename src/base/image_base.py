@@ -4,13 +4,14 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-15 10:30:19
+LastEditTime: 2022-09-18 16:41:54
 '''
 import json
 import math
 import os
 
 import cv2
+import lanelet2
 import numpy as np
 from utils.utils import dist
 
@@ -472,49 +473,53 @@ class OBJECT(BOX, SEGMENTATION, KEYPOINTS):
         return
 
 
-# class EGO_POSE:
-#     """图片位置坐标类
-#     """
+class LANELINE:
 
-#     def __init__(self,
-#                  latitude_in: float,
-#                  longitude_in: float,
-#                  elevation_in: float,
-#                  utm_position_x_in: float,
-#                  utm_position_y_in: float,
-#                  utm_position_z_in: float,
-#                  attitude_x_in: float,
-#                  attitude_y_in: float,
-#                  attitude_z_in: float,
-#                  position_type_in: int,
-#                  osmname_in: str = '') -> None:
-#         """
+    def __init__(self, laneline_id_in: int, laneline_class_in: str,
+                 laneline_points_in: list, utm_x: float, utm_y: float,
+                 att_z: float, label_image_wh: list, label_range: list,
+                 label_image_self_car_uv: list) -> None:
+        self.laneline_id = laneline_id_in
+        self.laneline_class = laneline_class_in
+        self.laneline_points_utm = laneline_points_in
+        self.laneline_points_label_image = self.utm_to_bev(
+            self.laneline_points_utm, utm_x, utm_y, att_z, label_image_wh,
+            label_range, label_image_self_car_uv)
 
-#         Args:
-#             latitude_in (float): _description_
-#             longitude_in (float): _description_
-#             elevation_in (float): _description_
-#             utm_position_x_in (float): _description_
-#             utm_position_y_in (float): _description_
-#             utm_position_z_in (float): _description_
-#             attitude_x_in (float): _description_
-#             attitude_y_in (float): _description_
-#             attitude_z_in (float): _description_
-#             position_type_in (int): _description_
-#             osmname_in (str, optional): _description_. Defaults to ''.
-#         """
+    def utm_to_bev(self, laneline_points_utm: dict, utm_x: float, utm_y: float,
+                   att_z: float, label_image_wh: list, label_range: list,
+                   label_image_self_car_uv: list) -> dict:  #世界坐标系转车身坐标系转像素坐标系
+        """utm坐标转换为检测距离内的bev图像坐标
 
-#         self.latitude = latitude_in
-#         self.longitude = longitude_in
-#         self.elevation = elevation_in
-#         self.utm_position_x = utm_position_x_in
-#         self.utm_position_y = utm_position_y_in
-#         self.utm_position_z = utm_position_z_in
-#         self.attitude_x = attitude_x_in
-#         self.attitude_y = attitude_y_in
-#         self.attitude_z = attitude_z_in
-#         self.position_type = position_type_in
-#         self.osmname = osmname_in
+        Args:
+            lane_lines_utm (dict): utm线段坐标字典
+            utm_x (float): utm_x
+            utm_y (float): utm_y
+            att_z (float): att_z
+            label_image_wh (list): 标注图片宽高
+            label_range (list): 标注范围前后左右
+            label_image_self_car_uv (list): 租车图像坐标
+
+        Returns:
+            dict: lane_lines_bev_image
+        """
+
+        temp_line = []
+        for point in laneline_points_utm:
+            # pose[3], pose[4], pose[8]对应车辆后轴中心的x, y, position_type(即车辆的转向角theta)
+            x_ = (point[0] - utm_x) * np.cos(att_z) + (point[1] -
+                                                       utm_y) * np.sin(att_z)
+            y_ = (point[1] - utm_y) * np.cos(att_z) - (point[0] -
+                                                       utm_x) * np.sin(att_z)
+            #车身坐标系转像素坐标系
+            u = int(label_image_self_car_uv[0] - y_ * label_image_wh[0] /
+                    (label_range[2] + label_range[3]))
+            v = int(label_image_self_car_uv[1] - x_ * label_image_wh[1] /
+                    (label_range[0] + label_range[1]))
+            if (0 <= u <= label_image_wh[0]) and (0 <= v <= label_image_wh[1]):
+                temp_line.append([u, v])
+
+        return temp_line
 
 
 class IMAGE:
@@ -528,17 +533,22 @@ class IMAGE:
                  width_in: int = 0,
                  channels_in: int = 0,
                  object_list_in: list = None,
-                 image_ego_dict_in: dict = None) -> None:
-        """[图片类]
+                 image_ego_dict_in: dict = None,
+                 image_time_stamp_in: str = '',
+                 laneline_list_in: list = None) -> None:
+        """图片类
 
         Args:
-            image_name_in (str): [图片名称]
-            image_name_new_in (str): [图片新名称]
-            image_path_in (str): [图片路径]
-            height_in (int): [图片高]
-            width_in (int): [图片宽]
-            channels_in (int): [图片通道数]
-            object_list_in (list): [标注目标列表]
+            image_name_in (str, optional): 图片名称. Defaults to ''.
+            image_name_new_in (str, optional): 图片新名称. Defaults to ''.
+            image_path_in (str, optional): 图片路径. Defaults to ''.
+            height_in (int, optional): 图片高. Defaults to 0.
+            width_in (int, optional): 图片宽. Defaults to 0.
+            channels_in (int, optional): 图片通道数. Defaults to 0.
+            object_list_in (list, optional): 标注目标列表. Defaults to None.
+            image_ego_dict_in (dict, optional): 图片自车pose. Defaults to None.
+            image_time_stamp_in (str, optional): 图片时间戳. Defaults to ''.
+            laneline_list_in (list, optional): 车道线列表. Defaults to None.
         """
 
         self.image_name = image_name_in  # 图片名称
@@ -566,6 +576,15 @@ class IMAGE:
             self.image_ego_flag = True
         else:
             self.image_ego_flag = False
+        self.image_time_stamp = image_time_stamp_in
+        if laneline_list_in == None:
+            self.laneline_list = []
+        else:
+            self.laneline_list = laneline_list_in
+        if len(self.laneline_list):
+            self.laneline_exist_flag = True
+        else:
+            self.laneline_exist_flag = False
 
     def object_class_modify_and_pixel_limit(self,
                                             dataset_instance: object) -> None:
@@ -757,15 +776,18 @@ class IMAGE:
             return False
         # base infomation
         annotation = {
-            'name': self.file_name_new,
+            'name':
+            self.file_name_new,
             'base_information': {
                 'width': self.width,
                 'height': self.height,
                 'channels': self.channels
             },
             'frames': [{
-                'timestamp': 10000,
-                'objects': []
+                'time_stamp': 10000,
+                'hy_time_stamp': self.image_time_stamp,
+                'objects': [],
+                'lanelines': []
             }],
             'attributes': {
                 'weather': 'undefined',
@@ -773,14 +795,15 @@ class IMAGE:
                 'timeofday': 'daytime'
             }
         }
+
         # image_ego
         if self.image_ego_flag:
             annotation.update({'image_ego': self.image_ego_dict})
         else:
             annotation.update({'image_ego': {}})
+
         # object
-        id = 1
-        object_count = 0
+        object_id = 1
         for object in self.object_list:
             # 真实框
             if object.box_exist_flag == False \
@@ -788,7 +811,7 @@ class IMAGE:
                     and object.keypoints_exist_flag == False:
                 continue
             object_dict = {
-                'id': id,
+                'id': object_id,
                 'object_clss': object.object_clss,
                 'box_clss': object.box_clss,
                 'box_color': object.box_color,
@@ -815,10 +838,21 @@ class IMAGE:
                 'segmentation_exist_flag': object.segmentation_exist_flag,
             }
             annotation['frames'][0]['objects'].append(object_dict)
-            id += 1
-            object_count += 1
-        if 0 == object_count:
-            return True
+            object_id += 1
+
+        # laneline
+        laneline_id = 1
+        for laneline in self.laneline_list:
+            laneline_dict = {
+                'id': laneline_id,
+                'laneline_clss': laneline.laneline_class,
+                'laneline_points_utm': laneline.laneline_points_utm,
+                'laneline_points_label_image':
+                laneline.laneline_points_label_image
+            }
+            annotation['frames'][0]['lanelines'].append(laneline_dict)
+            laneline_id += 1
+
         # 输出json文件
         json.dump(annotation, open(temp_annotation_output_path, 'w'))
 

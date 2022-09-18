@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-16 18:10:34
+LastEditTime: 2022-09-18 16:16:02
 '''
 import ftplib
 import json
@@ -130,7 +130,7 @@ class Dataset_Base:
         self.draw_car_mask = dataset_config['Draw_car_mask']
 
         # MAP
-        self.get_map = dataset_config['Get_map']
+        self.get_local_map = dataset_config['Get_local_map']
         self.delete_no_map = dataset_config['Delete_no_map']
         self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
 

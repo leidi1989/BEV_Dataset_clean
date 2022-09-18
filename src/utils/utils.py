@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-04-26 20:59:03
 LastEditors: Leidi
-LastEditTime: 2022-09-01 17:33:45
+LastEditTime: 2022-09-18 16:13:15
 '''
 # -*- coding: utf-8 -*-
 import math
@@ -51,6 +51,7 @@ def check_output_path(path: str, attach: str = '') -> str:
         os.makedirs(os.path.join(path, attach))
 
         return os.path.join(path, attach)
+
 
 def check_output_path_(path: str, attach: str = '') -> str:
     """[检查输出路径是否存在，若不存在则创建路径]
@@ -661,3 +662,45 @@ def calculate_distance(a_x: float, a_y: float, b_x: float,
     """
 
     return ((a_x - b_x)**2 + (a_y - b_y)**2)**0.5
+
+
+def utm_to_bev(lane_lines_utm: dict, utm_x: float, utm_y: float, att_z: float,
+               label_image_wh: list, label_range: list,
+               label_image_self_car_uv: list) -> dict:
+    """utm坐标转换为检测距离内的bev图像坐标
+
+    Args:
+        lane_lines_utm (dict): utm线段坐标字典
+        utm_x (float): utm_x
+        utm_y (float): utm_y
+        att_z (float): att_z
+        label_image_wh (list): 标注图片宽高
+        label_range (list): 标注范围前后左右
+        label_image_self_car_uv (list): 租车图像坐标
+
+    Returns:
+        dict: lane_lines_bev_image
+    """
+
+    lane_lines_bev_image = {}
+    for id, line in lane_lines_utm.items():
+        temp_line = []
+        for point in line:
+            # pose[3], pose[4], pose[8]对应车辆后轴中心的x, y, position_type(即车辆的转向角theta)
+            x_ = (point[0] - utm_x) * np.cos(att_z) + (point[1] -
+                                                       utm_y) * np.sin(att_z)
+            y_ = (point[1] - utm_y) * np.cos(att_z) - (point[0] -
+                                                       utm_x) * np.sin(att_z)
+            #车身坐标系转像素坐标系
+            u = int(label_image_self_car_uv[0] - y_ * label_image_wh[0] /
+                    (label_range[2] + label_range[3]))
+            v = int(label_image_self_car_uv[1] - x_ * label_image_wh[1] /
+                    (label_range[0] + label_range[1]))
+            # clip
+            # u = int(np.clip(u, 0, label_image_wh[0]))
+            # v = int(np.clip(v, 0, label_image_wh[1]))
+
+            temp_line.append([u, v])
+        lane_lines_bev_image[id] = temp_line
+
+    return lane_lines_bev_image

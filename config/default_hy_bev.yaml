@@ -37,7 +37,7 @@ Annotation_car: hq1
 # 目标数据集视角:
 Target_dataset_view: BEV
 # 是否包含地图
-Get_map: True
+Get_local_map: True
 # 是否删除无地图样本
 Delete_no_map: True
 # lat_lon_origin城市
