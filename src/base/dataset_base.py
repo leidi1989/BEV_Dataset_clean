@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-19 14:17:24
+LastEditTime: 2022-09-19 19:24:39
 '''
 import ftplib
 import json
@@ -32,7 +32,7 @@ plt.switch_backend('agg')
 # matplotlib.use('TkAgg')
 
 SOURCE_DATASET_STYLE = [
-    'CVAT_IMAGE_BEV_GROUP', 'CVAT_IMAGE_BEV_1', 'CVAT_IMAGE_BEV_2',
+    'CVAT_IMAGE_BEV_GROUP', 'CVAT_IMAGE_BEV_1', 'CVAT_IMAGE_BEV_2', 'CVAT_IMAGE_BEV_2_1',
     'CVAT_IMAGE_BEV_NAS', 'COCO2017', 'YUNCE_SEGMENT_COCO',
     'YUNCE_SEGMENT_COCO_ONE_IMAGE', 'HUAWEIYUN_SEGMENT', 'HY_VAL', 'BDD100K',
     'YOLO', 'TT100K', 'CCTSDB', 'LISA'
@@ -137,6 +137,7 @@ class Dataset_Base:
         }
         self.annotation_car = dataset_config['Annotation_car']
         self.draw_car_mask = dataset_config['Draw_car_mask']
+        self.multi_annotation_xml = dataset_config['Multi_annotation_xml']
 
         # MAP
         self.get_local_map = dataset_config['Get_local_map']
@@ -2142,28 +2143,46 @@ class Dataset_Base:
                     self.target_dataset_annotation_check_output_folder,
                     image.image_name_new)
                 label_image = cv2.imread(label_image_path)
-            lane_lines = []
+
+            
+            zeros1 = np.zeros((label_image.shape), dtype=np.uint8)
+            zeros1_mask = np.zeros((label_image.shape), dtype=np.uint8)
+            image.laneline_list = sorted(image.laneline_list,
+                                         key=lambda x: x.laneline_clss)
             for laneline in image.laneline_list:
                 nums[task_class_dict['Target_dataset_class'].index(
                     laneline.laneline_clss)].append(laneline.laneline_clss)
-                class_color = colors[
+                laneline_class_color = colors[
                     task_class_dict['Target_dataset_class'].index(
                         laneline.laneline_clss)]
+                lane_lines = []
                 lane_lines.append(
                     np.array(laneline.laneline_points_label_image, np.int32))
                 cv2.putText(label_image, laneline.laneline_clss,
                             (int(laneline.laneline_points_label_image[0][0]),
                              int(laneline.laneline_points_label_image[0][1])),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, class_color)
-            cv2.polylines(label_image,
-                          lane_lines,
-                          isClosed=False,
-                          color=(255, 255, 255),
-                          thickness=10)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                            laneline_class_color)
+                zeros1_mask = cv2.polylines(zeros1,
+                                            lane_lines,
+                                            isClosed=False,
+                                            color=laneline_class_color,
+                                            thickness=10)
+                plot_true_laneline_success += 1
 
-            label_image_concate = np.vstack((camera_image, label_image))
-            label_image_concate = cv2.resize(label_image_concate, [640, 1680])
-            cv2.imwrite(check_image_output_path, label_image_concate)
+            alpha = 1  # alpha 为第一张图片的透明度
+            if self.target_dataset_annotation_check_mask == False:
+                beta = 1  # beta 为第二张图片的透明度
+            else:
+                beta = 0.5  # beta 为第二张图片的透明度
+            gamma = 0
+            # cv2.addWeighted 将原始图片与 mask 融合
+            output_image = cv2.addWeighted(label_image, alpha, zeros1_mask,
+                                           beta, gamma)
+            camera_label_image_concate = np.vstack(
+                (camera_image, output_image))
+            # label_image_concate = cv2.resize(label_image_concate, [640, 1680])
+            cv2.imwrite(check_image_output_path, camera_label_image_concate)
 
         # 输出检查统计
         print("Total check annotations count: \t%d" % image_count)
@@ -2179,7 +2198,7 @@ class Dataset_Base:
         with open(
                 os.path.join(
                     self.target_dataset_annotation_check_output_folder,
-                    'class_count.txt'), 'w') as f:
+                    'laneline_class_count.txt'), 'w') as f:
             for i in nums:
                 if len(i) != 0:
                     temp = i[0] + ':' + str(len(i)) + '\n'
@@ -2284,7 +2303,6 @@ class Dataset_Base:
                     print('未知错误: %s', e)
                 object_list.append(one_object)
 
-            # TODO
             if dataset_instance.get_local_map:
                 # image_ego_pose
                 image_ego_pose = data['image_ego_pose']

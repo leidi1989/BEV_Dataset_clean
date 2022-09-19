@@ -4,9 +4,10 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-19 19:16:33
+LastEditTime: 2022-09-19 20:03:42
 '''
 import multiprocessing
+from pydoc import isdata, ispath
 import shutil
 import xml.etree.ElementTree as ET
 
@@ -19,7 +20,7 @@ from utils.utils import *
 import dataset
 
 
-class CVAT_IMAGE_BEV_2(Dataset_Base):
+class CVAT_IMAGE_BEV_2_1(Dataset_Base):
     """CVAT平台使用拆分camera和点云bev标注方法
 
     Args:
@@ -36,7 +37,6 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         self.source_dataset_image_count = self.get_source_dataset_image_count()
         self.source_dataset_annotation_count = self.get_source_dataset_annotation_count(
         )
-        self.camera_image_wh = [0, 0]
 
     def get_source_dataset_image_count(self) -> int:
         """[获取源数据集图片数量]
@@ -46,15 +46,13 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         """
 
         image_count = 0
-        for root, dirs, _ in os.walk(self.dataset_input_folder):
-            if root != self.dataset_input_folder:
-                continue
-            for dirct in dirs:
-                annotation_root = os.path.join(root, dirct)
-                for n in os.listdir(annotation_root):
-                    if n == 'related_images':
-                        continue
-                    if os.path.splitext(n)[-1].replace('.', '') in \
+        root = os.path.join(self.dataset_input_folder, 'sync_data')
+        for pitch in os.listdir(root):
+            image_root = os.path.join(root, pitch)
+            if os.path.isdir(os.path.join(root, pitch)):
+                for m in os.listdir(
+                        os.path.join(image_root, 'annotation_bev_image')):
+                    if os.path.splitext(m)[-1].replace('.', '') in \
                                 self.source_dataset_image_form_list:
                         image_count += 1
 
@@ -68,9 +66,13 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         """
 
         annotation_count = 0
-        for n in os.listdir(self.dataset_input_folder):
-            if n == 'annotations.xml':
-                annotation_count += 1
+        xml_root = os.path.join(self.dataset_input_folder, 'xml')
+        for n in os.listdir(xml_root):
+            pitch_xml = os.path.join(self.dataset_input_folder, 'xml', n)
+            if os.path.isdir(pitch_xml):
+                for m in os.listdir(pitch_xml):
+                    if m == 'annotations.xml':
+                        annotation_count += 1
 
         return annotation_count
 
@@ -82,12 +84,13 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         if not self.only_statistic:
             pbar, update = multiprocessing_object_tqdm(
                 self.source_dataset_image_count, 'Copy images', leave=True)
-            for root, dirs, _ in os.walk(self.dataset_input_folder):
-                if root != self.dataset_input_folder:
-                    continue
-                for dirct in dirs:
+            root = os.path.join(self.dataset_input_folder, 'sync_data')
+            for pitch in os.listdir(root):
+                image_root = os.path.join(root, pitch)
+                if os.path.isdir(os.path.join(root, pitch)):
                     pool = multiprocessing.Pool(self.workers)
-                    annotation_root = os.path.join(root, dirct)
+                    annotation_root = os.path.join(image_root,
+                                                   'annotation_bev_image')
                     for n in os.listdir(annotation_root):
                         if os.path.splitext(n)[-1].replace('.', '') in \
                                 self.source_dataset_image_form_list:
@@ -97,18 +100,19 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
                                              error_callback=err_call_back)
                     pool.close()
                     pool.join()
-                pbar.close()
+            pbar.close()
 
-        for n in os.listdir(self.dataset_input_folder):
-            if n == 'annotations.xml':
-                annotation_path = os.path.join(self.dataset_input_folder, n)
-                temp_annotation_path = os.path.join(
-                    self.source_dataset_annotations_folder,
-                    self.file_prefix + n)
-                temp_annotation_path = os.path.join(
-                    self.source_dataset_annotations_folder,
-                    self.file_prefix + n)
-                shutil.copy(annotation_path, temp_annotation_path)
+        xml_root = os.path.join(self.dataset_input_folder, 'xml')
+        for n in os.listdir(xml_root):
+            pitch_xml = os.path.join(self.dataset_input_folder, 'xml', n)
+            if os.path.isdir(pitch_xml):
+                for m in os.listdir(pitch_xml):
+                    if m == 'annotations.xml':
+                        annotation_path = os.path.join(pitch_xml, m)
+                        temp_annotation_path = os.path.join(
+                            self.source_dataset_annotations_folder,
+                            n + '_' + m)
+                        shutil.copy(annotation_path, temp_annotation_path)
 
         print('Copy images and annotations end.')
 
@@ -173,17 +177,14 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
 
         return ann_img
 
-    def source_dataset_copy_image(self, annotation_root: str, n: str) -> None:
+    def source_dataset_copy_image(self, image_root: str, n: str) -> None:
         """[复制源数据集图片至暂存数据集并修改图片类别、添加文件名前缀]
 
         Args:
             root (str): [文件所在目录]
             n (str): [文件名]
         """
-        image_root = os.path.join(annotation_root, 'related_images',
-                                  n.replace('.', '_'))
         image_path = os.path.join(image_root, n)
-        annotation_image_path = os.path.join(annotation_root, n)
         temp_image_path = os.path.join(self.source_dataset_images_folder,
                                        self.file_prefix + n)
         temp_annotation_image_path = os.path.join(
@@ -196,20 +197,31 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
                 '_' + self.target_dataset_image_form
             image_form_transform.__dict__[image_transform_type](
                 image_path, temp_image_path)
+            image = cv2.imread(temp_image_path)
+            camera_image = image[0:self.camera_image_wh[1],
+                                 0:self.camera_image_wh[0]]
+            annotation_image = image[self.camera_image_wh[1]:,
+                                     0:self.camera_image_wh[0]]
             if self.draw_car_mask:
-                image = cv2.imread(temp_image_path)
-                image = self.draw_mask(image)
-                cv2.imwrite(temp_image_path, image)
+                camera_image = self.draw_mask(camera_image)
+            cv2.imwrite(temp_image_path, camera_image)
+            cv2.imwrite(temp_annotation_image_path, annotation_image)
         else:
             if self.draw_car_mask:
                 image = cv2.imread(image_path)
-                image = self.draw_mask(image)
-                cv2.imwrite(temp_image_path, image)
+                camera_image = image[0:self.camera_image_wh[1], :, :]
+                annotation_image = image[self.camera_image_wh[1]:, :, :]
+                camera_image = self.draw_mask(camera_image)
+                cv2.imwrite(temp_image_path, camera_image)
+                cv2.imwrite(temp_annotation_image_path, annotation_image)
             else:
-                shutil.copy(image_path, temp_image_path)
-
-        # 拷贝annotation图片
-        shutil.copy(annotation_image_path, temp_annotation_image_path)
+                image = cv2.imread(image_path)
+                camera_image = image[0:self.camera_image_wh[1],
+                                     0:self.camera_image_wh[0], :]
+                annotation_image = image[self.label_image_wh[1]:,
+                                         0:self.label_image_wh[0], :]
+                cv2.imwrite(temp_image_path, camera_image)
+                cv2.imwrite(temp_annotation_image_path, annotation_image)
 
         return
 
@@ -880,11 +892,11 @@ class CVAT_IMAGE_BEV_2(Dataset_Base):
         print('\nStart build target dataset folder:')
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CVAT_IMAGE_BEV_2'))
+                         'CVAT_IMAGE_BEV_2_1'))
         shutil.rmtree(output_root)
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CVAT_IMAGE_BEV_2'))
+                         'CVAT_IMAGE_BEV_2_1'))
         annotations_output_folder = check_output_path(
             os.path.join(output_root, 'annotations'))
 
