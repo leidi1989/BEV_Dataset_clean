@@ -4,15 +4,15 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-18 17:21:25
+LastEditTime: 2022-09-19 16:51:52
 '''
-from lzma import is_check_supported
 import multiprocessing
 import shutil
 import xml.etree.ElementTree as ET
 
 import cv2
 import lanelet2
+import utm
 
 from base.dataset_base import Dataset_Base
 from base.image_base import *
@@ -49,26 +49,41 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         self.source_dataset_map_count = self.get_source_dataset_map_count()
         self.image_ego_pose_dict = self.get_image_ego_pose()
         self.image_time_stamp_dict = self.get_image_time_stamp()
-        self.lat_lon_origin = {
-            'wuhan': {
-                'lat': 30.425457029885372151,
-                'lon': 114.09623523096009023
-            },
-            'shenzhen': {
-                'lat': 22.6860589,
-                'lon': 114.3779897
-            },
-        }
+        self.lat_lon_origin = opt['Lat_lon_origin_point']
+
+        self.origin_utm = {}
         self.utm_offset = int(
             math.sqrt(
                 math.pow((self.label_range[0] + self.label_range[1]), 2) +
                 math.pow((self.label_range[2] + self.label_range[3]), 2)))
-        self.lanelet_layers = {}
-        self.lanelet_linestringlayer = {}
         # self.camera_name_list = [
         #     'cam_back', 'cam_front_center', 'cam_left_back', 'cam_left_front',
         #     'cam_right_back', 'cam_right_front'
         # ]
+
+    def get_utm_origin(self) -> dict:
+        """计算utm起始点
+
+        Returns:
+            dict: utm起始点字典
+        """
+
+        origin_x, origin_y, zone_number, zone_letter = utm.from_latlon(
+            self.lat_lon_origin[self.lat_lon_origin_city]['lat'],
+            self.lat_lon_origin[self.lat_lon_origin_city]['lon'])
+        utm_proj = lanelet2.projection.UtmProjector(
+            lanelet2.io.Origin(
+                self.lat_lon_origin[self.lat_lon_origin_city]['lat'],
+                self.lat_lon_origin[self.lat_lon_origin_city]['lon']))
+        origin_utm = {
+            "origin_x": origin_x,
+            "origin_y": origin_y,
+            "zone_number": zone_number,
+            "zone_letter": zone_letter,
+            "utm_proj": utm_proj
+        }
+
+        return origin_utm
 
     def get_source_dataset_image_count(self) -> int:
         """[获取源数据集图片数量]
@@ -217,14 +232,12 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             dict: _description_
         """
 
-        print('\n Start get lanelet layers:')
         proj = lanelet2.projection.UtmProjector(
             lanelet2.io.Origin(
                 self.lat_lon_origin[self.lat_lon_origin_city]['lat'],
                 self.lat_lon_origin[self.lat_lon_origin_city]['lon']))
         lanelet_layers = {}
-        for n in tqdm(os.listdir(self.source_dataset_map_folder),
-                      desc='Get lanelet layer'):
+        for n in os.listdir(self.source_dataset_map_folder):
             lanelet_layers[n] = lanelet2.io.load(
                 os.path.join(self.source_dataset_map_folder, n),
                 proj).laneletLayer
@@ -238,14 +251,12 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             dict: _description_
         """
 
-        print('\n Start get lanelet linestringlayer:')
         proj = lanelet2.projection.UtmProjector(
             lanelet2.io.Origin(
                 self.lat_lon_origin[self.lat_lon_origin_city]['lat'],
                 self.lat_lon_origin[self.lat_lon_origin_city]['lon']))
         lanelet_linestringlayer = {}
-        for n in tqdm(os.listdir(self.source_dataset_map_folder),
-                      desc='Get lanelet layer'):
+        for n in os.listdir(self.source_dataset_map_folder):
             lanelet_linestringlayer[n] = lanelet2.io.load(
                 os.path.join(self.source_dataset_map_folder, n),
                 proj).lineStringLayer
@@ -418,8 +429,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         temp_file_name_list = []
         total_source_dataset_annotations_list = os.listdir(
             self.source_dataset_annotations_folder)
-        self.lanelet_layers = self.get_lanelet_layers()
-        self.lanelet_linestringlayer = self.get_lanelet_linestringlayer()
         for source_annotation_name in tqdm(
                 total_source_dataset_annotations_list,
                 desc='Total annotations'):
@@ -442,22 +451,22 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             pbar, update = multiprocessing_list_tqdm(root,
                                                      desc='Total images',
                                                      leave=False)
-            # for annotation in root:
-            #     if annotation.tag != 'image':
-            #         continue
-            #     pool.apply_async(func=self.load_image_annotation,
-            #                      args=(annotation, process_output),
-            #                      callback=update,
-            #                      error_callback=err_call_back)
-            # pool.close()
-            # pool.join()
-            # pbar.close()
-
-            # debug
-            for annotation in tqdm(root, desc='Total images', leave=False):
+            for annotation in root:
                 if annotation.tag != 'image':
                     continue
-                self.load_image_annotation(annotation, process_output)
+                pool.apply_async(func=self.load_image_annotation,
+                                 args=(annotation, process_output),
+                                 callback=update,
+                                 error_callback=err_call_back)
+            pool.close()
+            pool.join()
+            pbar.close()
+
+            # debug
+            # for annotation in tqdm(root, desc='Total images', leave=False):
+            #     if annotation.tag != 'image':
+            #         continue
+            #     self.load_image_annotation(annotation, process_output)
 
             success_count += process_output['success_count']
             fail_count += process_output['fail_count']
@@ -485,12 +494,12 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         """
         # image_name = str(annotation.attrib['name']).split(
         #     '.')[0] + '.' + self.temp_image_form
+
         image_name = str(annotation.attrib['name']).split(
             os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
         image_name_new = self.file_prefix + image_name
         image_path = os.path.join(self.temp_images_folder, image_name_new)
-        label_image_path = os.path.join(
-            self.source_dataset_annotation_image_folder, image_name_new)
+
         image_time_stamp = self.image_time_stamp_dict[image_name_new]
         channels = 0
         if not self.only_statistic:
@@ -580,6 +589,9 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         image_ego_pose = None
         laneline_list = None
         if self.get_local_map:
+            origin_utm = self.get_utm_origin()
+            lanelet_layers = self.get_lanelet_layers()
+            lanelet_linestringlayer = self.get_lanelet_linestringlayer()
             # osm name
             osm_file_name = ''
             local_map_vision_box = lanelet2.core.BoundingBox2d(
@@ -593,7 +605,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     self.utm_offset,
                     self.image_ego_pose_dict[image_name_new][4] +
                     self.utm_offset))
-            for temp_osm_name, lanelet_layer in (self.lanelet_layers).items():
+            for temp_osm_name, lanelet_layer in (lanelet_layers).items():
                 lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
                 if len(lanelets_inRegion):
                     for elem in lanelets_inRegion:
@@ -616,13 +628,22 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 return
 
             # image_ego_pose
+            lat, lon, el = float(
+                self.image_ego_pose_dict[image_name_new][0]), float(
+                    self.image_ego_pose_dict[image_name_new][1]), float(
+                        self.image_ego_pose_dict[image_name_new][2])
+            utm_xy = utm.from_latlon(lat, lon, origin_utm["zone_number"],
+                                     origin_utm["zone_letter"])
+            utm_x, utm_y = utm_xy[0] - origin_utm["origin_x"], utm_xy[
+                1] - origin_utm["origin_y"]
+            utm_z = el
             image_ego_pose = {
                 "latitude": self.image_ego_pose_dict[image_name_new][0],
                 "longitude": self.image_ego_pose_dict[image_name_new][1],
                 "elevation": self.image_ego_pose_dict[image_name_new][2],
-                "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
-                "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
-                "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
+                "utm_position.x": utm_x,
+                "utm_position.y": utm_y,
+                "utm_position.z": utm_z,
                 "attitude.x": self.image_ego_pose_dict[image_name_new][6],
                 "attitude.y": self.image_ego_pose_dict[image_name_new][7],
                 "attitude.z": self.image_ego_pose_dict[image_name_new][8],
@@ -633,7 +654,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
             # 获取local map
             laneline_list = []
-            linestring_inregion_src = self.lanelet_linestringlayer[
+            linestring_inregion_src = lanelet_linestringlayer[
                 osm_file_name].search(local_map_vision_box)
             local_map_total_line_id = []
             for n, elem in enumerate(
@@ -642,46 +663,30 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     laneline_points_utm = []
                     if 'roadside' in elem.attributes.keys():
                         if elem.attributes['roadside'] == 'true':
-                            laneline_class = 'roadside'
+                            laneline_clss = 'roadside'
                         elif elem.attributes['roadside'] == 'false':
-                            laneline_class = 'line'
+                            laneline_clss = 'line'
                         for point in elem:
                             laneline_points_utm.append([point.x, point.y])
                         # elif 'vguideline' in elem.attributes.keys():
                         #     pass
-                        laneline_list.append(
-                            LANELINE(
-                                laneline_id_in=n,
-                                laneline_class_in=laneline_class,
-                                laneline_points_utm_in=laneline_points_utm,
-                                utm_x=self.image_ego_pose_dict[image_name_new]
-                                [3],
-                                utm_y=self.image_ego_pose_dict[image_name_new]
-                                [4],
-                                att_z=self.image_ego_pose_dict[image_name_new]
-                                [8],
-                                label_image_wh=self.label_image_wh,
-                                label_range=self.label_range,
-                                label_image_self_car_uv=self.
-                                label_image_self_car_uv))
-                        local_map_total_line_id.append(elem.id)
-
-            # # show laneline
-            # camera_image = cv2.imread(image_path)
-            # label_image = cv2.imread(label_image_path)
-            # lane_lines = []
-            # for laneline in laneline_list:
-            #     lane_lines.append(
-            #         np.array(laneline.laneline_points_label_image, np.int32))
-            # cv2.polylines(label_image,
-            #               lane_lines,
-            #               isClosed=False,
-            #               color=(255, 255, 255),
-            #               thickness=20)
-            # label_image_concate = np.vstack((camera_image, label_image))
-            # label_image_concate = cv2.resize(label_image_concate, [640, 1680])
-            # cv2.imshow('label image', label_image_concate)
-            # cv2.waitKey(0)
+                    if laneline_clss not in self.task_dict['Laneline'][
+                            'Source_dataset_class']:
+                        continue
+                    temp_laneline = LANELINE(
+                        laneline_id_in=n,
+                        laneline_clss_in=laneline_clss,
+                        laneline_points_utm_in=laneline_points_utm,
+                        utm_x=self.image_ego_pose_dict[image_name_new][3],
+                        utm_y=self.image_ego_pose_dict[image_name_new][4],
+                        att_z=self.image_ego_pose_dict[image_name_new][8],
+                        label_image_wh=self.label_image_wh,
+                        label_range=self.label_range,
+                        label_image_self_car_uv=self.label_image_self_car_uv)
+                    if 0 == len(temp_laneline.laneline_points_label_image):
+                        continue
+                    laneline_list.append(temp_laneline)
+                    local_map_total_line_id.append(elem.id)
 
         image = IMAGE(image_name, image_name_new, image_path, height, width,
                       channels, object_list, image_ego_pose, image_time_stamp,
@@ -694,7 +699,9 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             self.temp_annotations_folder,
             image.file_name_new + '.' + self.temp_annotation_form)
         image.object_class_modify(self)
+        image.laneline_class_modify(self)
         image.object_pixel_limit(self)
+        # image.laneline_curvature_limit(self)
         # if 0 == len(image.object_list) and not self.keep_no_object:
         #     print('{} no object, has been delete.'.format(
         #         image.image_name_new))
@@ -712,6 +719,230 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             process_output['fail_count'] += 1
 
         return
+
+    # def load_image_annotation(self, annotation, process_output: dict) -> None:
+    #     """将源标注转换为暂存标注
+
+    #     Args:
+    #         source_annotation_name (str): 源标注文件名称
+    #         process_output (dict): 进程间通信字典
+    #     """
+    #     # image_name = str(annotation.attrib['name']).split(
+    #     #     '.')[0] + '.' + self.temp_image_form
+    #     self.lanelet_layers = self.get_lanelet_layers()
+    #     image_name = str(annotation.attrib['name']).split(
+    #         os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
+    #     image_name_new = self.file_prefix + image_name
+    #     image_path = os.path.join(self.temp_images_folder, image_name_new)
+
+    #     image_time_stamp = self.image_time_stamp_dict[image_name_new]
+    #     channels = 0
+    #     if not self.only_statistic:
+    #         if not os.path.exists(image_path):
+    #             print('\n {} not exist.'.format(image_name_new))
+    #             process_output['fail_count'] += 1
+    #             return
+    #         img = cv2.imread(image_path)
+    #         if img is None:
+    #             print('Can not load: {}'.format(image_name_new))
+    #             process_output['fail_count'] += 1
+    #             return
+    #         channels = img.shape[-1]
+    #     else:
+    #         channels = 3
+    #     width = int(annotation.attrib['width'])
+    #     height = int(annotation.attrib['height'])
+    #     object_list = []
+    #     annotation_children_node = annotation.getchildren()
+    #     # get object box head orin
+    #     head_points_dict = {}
+    #     for obj in annotation_children_node:
+    #         if obj.tag != 'points':  # 只处理points标签
+    #             continue
+    #         obj_children_node = obj.getchildren()
+    #         if obj_children_node[0].text is None:
+    #             continue
+    #         head_point_id = ''.join(
+    #             list(filter(str.isnumeric, obj_children_node[0].text)))
+    #         point_list = list(map(float, obj.attrib['points'].split(',')))
+    #         head_points_dict.update({head_point_id: point_list})
+    #     # get object information
+    #     for n, obj in enumerate(annotation_children_node):
+    #         if obj.tag != 'box':  # 只处理box标签
+    #             continue
+    #         # if 'group_id' not in obj.attrib:
+    #         #     continue
+    #         obj_children_node = obj.getchildren()
+    #         for one_obj_children_node in obj_children_node:
+    #             if one_obj_children_node.attrib['name'] == 'visibility':
+    #                 continue
+    #             if one_obj_children_node.text is None:
+    #                 object_head_point_id = None
+    #                 clss = obj.attrib['label']
+    #             else:
+    #                 object_head_point_id = ''.join(
+    #                     list(filter(str.isnumeric,
+    #                                 one_obj_children_node.text)))
+    #                 clss = ''.join(
+    #                     list(filter(str.isalpha, one_obj_children_node.text)))
+    #         clss = clss.replace(' ', '').lower()
+    #         if clss not in self.total_task_source_class_list:
+    #             continue
+    #         box_xywh = [
+    #             int(float(obj.attrib['xtl'])),
+    #             int(float(obj.attrib['ytl'])),
+    #             int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
+    #             int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+    #         ]
+    #         box_xtlytlxbrybr = [
+    #             float(obj.attrib['xtl']),
+    #             float(obj.attrib['ytl']),
+    #             float(obj.attrib['xbr']),
+    #             float(obj.attrib['ybr'])
+    #         ]
+    #         if 'rotation' in obj.attrib:
+    #             box_rotation = float(obj.attrib['rotation'])
+    #         else:
+    #             box_rotation = 0
+    #         # get head orientation
+    #         if object_head_point_id is not None and object_head_point_id in head_points_dict:
+    #             box_head_point = head_points_dict[object_head_point_id]
+    #         else:
+    #             box_head_point = None
+    #         object_list.append(
+    #             OBJECT(n,
+    #                    clss,
+    #                    box_clss=clss,
+    #                    box_xywh=box_xywh,
+    #                    box_xtlytlxbrybr=box_xtlytlxbrybr,
+    #                    box_rotation=box_rotation +
+    #                    self.label_object_rotation_angle,
+    #                    box_head_point=box_head_point,
+    #                    need_convert=self.need_convert))
+
+    #     # local map
+    #     image_ego_pose = None
+    #     laneline_list = None
+    #     if self.get_local_map:
+    #         # osm name
+    #         osm_file_name = ''
+    #         local_map_vision_box = lanelet2.core.BoundingBox2d(
+    #             lanelet2.core.BasicPoint2d(
+    #                 self.image_ego_pose_dict[image_name_new][3] -
+    #                 self.utm_offset,
+    #                 self.image_ego_pose_dict[image_name_new][4] -
+    #                 self.utm_offset),
+    #             lanelet2.core.BasicPoint2d(
+    #                 self.image_ego_pose_dict[image_name_new][3] +
+    #                 self.utm_offset,
+    #                 self.image_ego_pose_dict[image_name_new][4] +
+    #                 self.utm_offset))
+    #         for temp_osm_name, lanelet_layer in (self.lanelet_layers).items():
+    #             lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+    #             if len(lanelets_inRegion):
+    #                 for elem in lanelets_inRegion:
+    #                     if lanelet2.geometry.distance(
+    #                             elem,
+    #                             lanelet2.core.BasicPoint2d(
+    #                                 self.image_ego_pose_dict[image_name_new]
+    #                                 [3],
+    #                                 self.image_ego_pose_dict[image_name_new]
+    #                                 [4])) == 0:
+    #                         osm_file_name = temp_osm_name
+    #                         break
+
+    #         if self.delete_no_map and osm_file_name == '':
+    #             # print('{} no map, has been delete.'.format(image_name_new))
+    #             # if not self.only_statistic:
+    #             #     os.remove(image_path)
+    #             # process_output['no_object'] += 1
+    #             # process_output['fail_count'] += 1
+    #             return
+
+    #         # image_ego_pose
+    #         image_ego_pose = {
+    #             "latitude": self.image_ego_pose_dict[image_name_new][0],
+    #             "longitude": self.image_ego_pose_dict[image_name_new][1],
+    #             "elevation": self.image_ego_pose_dict[image_name_new][2],
+    #             "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
+    #             "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
+    #             "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
+    #             "attitude.x": self.image_ego_pose_dict[image_name_new][6],
+    #             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
+    #             "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+    #             "position_type":
+    #             int(self.image_ego_pose_dict[image_name_new][9]),
+    #             "osm_file_name": osm_file_name,
+    #         }
+
+    #         # 获取local map
+    #         laneline_list = []
+    #         linestring_inregion_src = self.lanelet_linestringlayer[
+    #             osm_file_name].search(local_map_vision_box)
+    #         local_map_total_line_id = []
+    #         for n, elem in enumerate(
+    #                 linestring_inregion_src):  #提取所有车道线id和点集（无重复）
+    #             if elem.id not in local_map_total_line_id:
+    #                 laneline_points_utm = []
+    #                 if 'roadside' in elem.attributes.keys():
+    #                     if elem.attributes['roadside'] == 'true':
+    #                         laneline_clss = 'roadside'
+    #                     elif elem.attributes['roadside'] == 'false':
+    #                         laneline_clss = 'line'
+    #                     for point in elem:
+    #                         laneline_points_utm.append([point.x, point.y])
+    #                     # elif 'vguideline' in elem.attributes.keys():
+    #                     #     pass
+    #                 if laneline_clss not in self.task_dict['Laneline'][
+    #                         'Source_dataset_class']:
+    #                     continue
+    #                 temp_laneline = LANELINE(
+    #                     laneline_id_in=n,
+    #                     laneline_clss_in=laneline_clss,
+    #                     laneline_points_utm_in=laneline_points_utm,
+    #                     utm_x=self.image_ego_pose_dict[image_name_new][3],
+    #                     utm_y=self.image_ego_pose_dict[image_name_new][4],
+    #                     att_z=self.image_ego_pose_dict[image_name_new][8],
+    #                     label_image_wh=self.label_image_wh,
+    #                     label_range=self.label_range,
+    #                     label_image_self_car_uv=self.
+    #                     label_image_self_car_uv)
+    #                 if 0 == len(temp_laneline.laneline_points_label_image):
+    #                     continue
+    #                 laneline_list.append(temp_laneline)
+    #                 local_map_total_line_id.append(elem.id)
+
+    #     image = IMAGE(image_name, image_name_new, image_path, height, width,
+    #                   channels, object_list, image_ego_pose, image_time_stamp,
+    #                   laneline_list)
+    #     # 读取目标标注信息，输出读取的source annotation至temp annotation
+    #     if image is None:
+    #         process_output['fail_count'] += 1
+    #         return
+    #     temp_annotation_output_path = os.path.join(
+    #         self.temp_annotations_folder,
+    #         image.file_name_new + '.' + self.temp_annotation_form)
+    #     image.object_class_modify(self)
+    #     image.laneline_class_modify(self)
+    #     image.object_pixel_limit(self)
+    #     # image.laneline_curvature_limit(self)
+    #     # if 0 == len(image.object_list) and not self.keep_no_object:
+    #     #     print('{} no object, has been delete.'.format(
+    #     #         image.image_name_new))
+    #     #     if not self.only_statistic:
+    #     #         os.remove(image.image_path)
+    #     #     process_output['no_object'] += 1
+    #     #     process_output['fail_count'] += 1
+    #     #     return
+    #     if image.output_temp_annotation(temp_annotation_output_path):
+    #         process_output['temp_file_name_list'].append(image.file_name_new)
+    #         process_output['success_count'] += 1
+    #     else:
+    #         print('errow output temp annotation: {}'.format(
+    #             image.file_name_new))
+    #         process_output['fail_count'] += 1
+
+    #     return
 
     @staticmethod
     def target_dataset(dataset_instance: Dataset_Base) -> None:

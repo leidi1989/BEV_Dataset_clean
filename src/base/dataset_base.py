@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-18 17:13:40
+LastEditTime: 2022-09-19 14:17:24
 '''
 import ftplib
 import json
@@ -40,7 +40,7 @@ SOURCE_DATASET_STYLE = [
 
 TARGET_DATASET_STYLE = [
     'PYVA', 'CVT', 'YOLO', 'COCO2017', 'CITYSCAPES', 'CITYSCAPES_VAL',
-    'CVAT_IMAGE_1_1'
+    'CVAT_IMAGE_1_1', 'HY_BEV', 'HDMAPNET'
 ]
 
 TARGET_DATASET_FILE_FORM = {
@@ -75,7 +75,15 @@ TARGET_DATASET_FILE_FORM = {
     'CVT': {
         'image': 'jpg',
         'annotation': 'json'
-    }
+    },
+    'HY_BEV': {
+        'image': 'jpg',
+        'annotation': 'json'
+    },
+    'HDMAPNET': {
+        'image': 'jpg',
+        'annotation': 'json'
+    },
 }
 
 
@@ -124,7 +132,8 @@ class Dataset_Base:
             'Detection': None,
             'Semantic_segmentation': None,
             'Instance_segmentation': None,
-            'Keypoints': None
+            'Keypoints': None,
+            'Laneline': None
         }
         self.annotation_car = dataset_config['Annotation_car']
         self.draw_car_mask = dataset_config['Draw_car_mask']
@@ -830,6 +839,8 @@ class Dataset_Base:
                 self.segmentation_sample_statistics(task, task_class_dict)
             elif task == 'Keypoint' and task_class_dict is not None:
                 self.keypoint_sample_statistics(task, task_class_dict)
+            elif task == 'Laneline' and task_class_dict is not None:
+                self.laneline_sample_statistics(task, task_class_dict)
 
         return
 
@@ -1543,6 +1554,133 @@ class Dataset_Base:
 
         return total_annotation_keypoints_class_count_dict_list
 
+    def laneline_sample_statistics(self, task: str,
+                                   task_class_dict: dict) -> None:
+        """[语义分割样本统计]
+
+        Args:
+            task (str): [任务类型]
+            task_class_dict (dict): [对应任务类别字典]
+        """
+
+        print('Start statistic semantic segmentation sample:')
+        # 声明dataframe
+        data = {}
+        temp_task_class_list = task_class_dict['Target_dataset_class']
+        if 'unlabeled' not in temp_task_class_list:
+            temp_task_class_list.append('unlabeled')
+        for divide_file_name in self.temp_divide_file_annotation_path_dict.keys(
+        ):
+            data.update({divide_file_name: [0 for _ in temp_task_class_list]})
+        each_class_object_count_dataframe = pd.DataFrame(
+            data, index=[x for x in temp_task_class_list])
+        each_class_pixel_count_dataframe = pd.DataFrame(
+            data, index=[x for x in temp_task_class_list])
+        each_class_pixel_proportion_dataframe = pd.DataFrame(
+            data, index=[x for x in temp_task_class_list])
+
+        for divide_file_name, divide_annotation_list in tqdm(
+                self.temp_divide_file_annotation_path_dict.items(),
+                total=len(self.temp_divide_file_annotation_path_dict),
+                desc='Statistic semantic segmentation sample'):
+            if divide_file_name == 'total':
+                continue
+
+            # 统计全部labels各类别像素点数量
+            total_image_count_pixel_dict_list = []
+            pbar, update = multiprocessing_list_tqdm(
+                divide_annotation_list,
+                desc='Count {} set class pixal'.format(divide_file_name),
+                leave=False)
+            pool = multiprocessing.Pool(self.workers)
+            for temp_annotation_path in divide_annotation_list:
+                image_class_pixal_dict_list = pool.apply_async(
+                    func=self.get_temp_laneline_class_count,
+                    args=(temp_annotation_path, ),
+                    callback=update,
+                    error_callback=err_call_back)
+                total_image_count_pixel_dict_list.append(
+                    image_class_pixal_dict_list.get())
+
+            pool.close()
+            pool.join()
+            pbar.close()
+
+            # 获取多进程结果
+            for n in tqdm(total_image_count_pixel_dict_list,
+                          desc='Collection multiprocessing result',
+                          leave=False):
+                for l in n[0]:
+                    for key, value in l.items():
+                        each_class_pixel_count_dataframe[divide_file_name][
+                            key] += value
+                for m in n[1]:
+                    for key, value in m.items():
+                        each_class_object_count_dataframe[divide_file_name][
+                            key] += value
+
+        each_class_object_count_dataframe[
+            'total'] = each_class_object_count_dataframe.sum(axis=1)
+        each_class_pixel_count_dataframe[
+            'total'] = each_class_pixel_count_dataframe.sum(axis=1)
+
+        # 类别占比统计
+        for n in each_class_pixel_proportion_dataframe.keys():
+            total_count = each_class_pixel_count_dataframe[n].sum()
+            each_class_pixel_proportion_dataframe[
+                n] = each_class_pixel_count_dataframe[n].apply(
+                    lambda x: x / total_count)
+        each_class_pixel_proportion_dataframe = each_class_pixel_proportion_dataframe.fillna(
+            int(0))
+        each_class_object_count_dataframe = each_class_object_count_dataframe.sort_index(
+            ascending=False)
+        each_class_pixel_count_dataframe = each_class_pixel_count_dataframe.sort_index(
+            ascending=False)
+        each_class_pixel_proportion_dataframe = each_class_pixel_proportion_dataframe.sort_index(
+            ascending=False)
+        self.temp_divide_object_count_dataframe_dict.update(
+            {task: each_class_object_count_dataframe})
+        self.temp_divide_each_class_pixel_count_dataframe_dict.update(
+            {task: each_class_pixel_count_dataframe})
+        self.temp_divide_each_pixel_proportion_dataframe_dict.update(
+            {task: each_class_pixel_proportion_dataframe})
+        # 记录类别分布
+        each_class_object_count_dataframe.to_csv(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_object_count.csv')))
+        each_class_pixel_count_dataframe.to_csv(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_pixel_count.csv')))
+        each_class_pixel_proportion_dataframe.to_csv(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_pixel_proportion.csv')))
+
+        each_class_object_count_dataframe.plot(kind='bar')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_object_count.png')))
+        each_class_pixel_count_dataframe.plot(kind='bar')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_pixel_count.png')))
+        each_class_pixel_proportion_dataframe.plot()
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        plt.savefig(
+            (os.path.join(self.temp_sample_objec_class_statistics_folder,
+                          'Semantic_segmentation_pixel_proportion.png')))
+
+        return
+
+    def get_temp_laneline_class_count(self):
+
+        x = 0
+        pass
+
     def get_image_mean_std(self, img_filename: str) -> list:
         """[获取图片均值和标准差]
 
@@ -1976,6 +2114,80 @@ class Dataset_Base:
 
         return
 
+    def plot_true_laneline(self, task, task_class_dict) -> None:
+
+        colors = [[random.randint(0, 255) for _ in range(3)]
+                  for _ in range(len(task_class_dict['Target_dataset_class']))
+                  ]  # 类别色彩
+        # 统计各个类别的框数
+        nums = [[]
+                for _ in range(len(task_class_dict['Target_dataset_class']))]
+        image_count = 0
+        plot_true_laneline_success = 0
+        plot_true_laneline_fail = 0
+        total_laneline = 0
+        for image in tqdm(self.target_dataset_check_images_list,
+                          desc='Output check laneline images'):
+            check_image_output_path = os.path.join(
+                self.target_dataset_annotation_check_output_folder,
+                image.image_name)
+            camera_image = cv2.imread(image.image_path)
+            if 1 == len(self.task_dict):
+                label_image_path = os.path.join(
+                    self.source_dataset_annotation_image_folder,
+                    image.image_name_new)
+                label_image = cv2.imread(label_image_path)
+            else:
+                label_image_path = os.path.join(
+                    self.target_dataset_annotation_check_output_folder,
+                    image.image_name_new)
+                label_image = cv2.imread(label_image_path)
+            lane_lines = []
+            for laneline in image.laneline_list:
+                nums[task_class_dict['Target_dataset_class'].index(
+                    laneline.laneline_clss)].append(laneline.laneline_clss)
+                class_color = colors[
+                    task_class_dict['Target_dataset_class'].index(
+                        laneline.laneline_clss)]
+                lane_lines.append(
+                    np.array(laneline.laneline_points_label_image, np.int32))
+                cv2.putText(label_image, laneline.laneline_clss,
+                            (int(laneline.laneline_points_label_image[0][0]),
+                             int(laneline.laneline_points_label_image[0][1])),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, class_color)
+            cv2.polylines(label_image,
+                          lane_lines,
+                          isClosed=False,
+                          color=(255, 255, 255),
+                          thickness=10)
+
+            label_image_concate = np.vstack((camera_image, label_image))
+            label_image_concate = cv2.resize(label_image_concate, [640, 1680])
+            cv2.imwrite(check_image_output_path, label_image_concate)
+
+        # 输出检查统计
+        print("Total check annotations count: \t%d" % image_count)
+        print('Check annotation true laneline count:')
+        print("Plot true laneline success image: \t%d" %
+              plot_true_laneline_success)
+        print("Plot true laneline fail image:    \t%d" %
+              plot_true_laneline_fail)
+        for i in nums:
+            if len(i) != 0:
+                print(i[0] + ':' + str(len(i)))
+
+        with open(
+                os.path.join(
+                    self.target_dataset_annotation_check_output_folder,
+                    'class_count.txt'), 'w') as f:
+            for i in nums:
+                if len(i) != 0:
+                    temp = i[0] + ':' + str(len(i)) + '\n'
+                    f.write(temp)
+            f.close()
+
+        return
+
     def plot_segmentation_annotation(
             self, task: str, task_class_dict: dict, image: IMAGE,
             segment_annotation_output_path: str) -> None:
@@ -2071,7 +2283,7 @@ class Dataset_Base:
                 except EOFError as e:
                     print('未知错误: %s', e)
                 object_list.append(one_object)
-                
+
             # TODO
             if dataset_instance.get_local_map:
                 # image_ego_pose
@@ -2081,8 +2293,8 @@ class Dataset_Base:
                 laneline_list = []
                 for laneline in data['frames'][0]['lanelines']:
                     laneline_list.append(
-                        LANELINE(laneline_id_in=laneline['id'],
-                                 laneline_class_in=laneline['laneline_class'],
+                        LANELINE(laneline_id_in=laneline['id'] - 1,
+                                 laneline_clss_in=laneline['laneline_clss'],
                                  laneline_points_utm_in=laneline[
                                      'laneline_points_utm'],
                                  laneline_points_label_image_in=laneline[
@@ -2117,7 +2329,7 @@ class Dataset_Base:
             if task == 'Detection' and task_class_dict is not None:
                 if self.target_dataset_view == 'perspective':
                     self.plot_true_box(task, task_class_dict)
-                else:
+                elif self.target_dataset_view == 'BEV':
                     self.plot_true_box_bev(task, task_class_dict)
             elif task == 'Semantic_segmentation' and task_class_dict is not None:
                 self.plot_true_segmentation(task, task_class_dict)
@@ -2125,6 +2337,8 @@ class Dataset_Base:
                   or task == 'Multi_task') and task_class_dict is not None:
                 self.plot_true_box(task, task_class_dict)
                 self.plot_true_segmentation(task, task_class_dict)
+            elif (task == 'Laneline') and task_class_dict is not None:
+                self.plot_true_laneline(task, task_class_dict)
 
         return
 

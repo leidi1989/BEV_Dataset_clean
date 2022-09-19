@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:07:13
 LastEditors: Leidi
-LastEditTime: 2022-09-14 13:45:59
+LastEditTime: 2022-09-19 09:46:51
 '''
 from .cvat_coco2017 import CVAT_COCO2017
 from .cvat_image_1_1 import CVAT_IMAGE_1_1
@@ -14,6 +14,7 @@ from .cvat_image_bev_3_map import CVAT_IMAGE_BEV_3_MAP
 from .cvat_image_bev_group import CVAT_IMAGE_BEV_GROUP
 from .cvat_image_bev_nas import CVAT_IMAGE_BEV_NAS
 from .cvt import CVT
+from .hdmapnet import HDMAPNET
 from .hy_bev import HY_BEV
 # from .geely_coco_one_image import GEELY_COCO_ONE_IMAGE
 # from .huaweiyun_segment import HUAWEIYUN_SEGMENT

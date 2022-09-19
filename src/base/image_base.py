@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-18 17:15:55
+LastEditTime: 2022-09-19 15:58:02
 '''
 import json
 import math
@@ -477,7 +477,7 @@ class LANELINE:
 
     def __init__(self,
                  laneline_id_in: int,
-                 laneline_class_in: str,
+                 laneline_clss_in: str,
                  laneline_points_utm_in: list = None,
                  laneline_points_label_image_in: list = None,
                  utm_x: float = 0,
@@ -487,7 +487,7 @@ class LANELINE:
                  label_range: list = None,
                  label_image_self_car_uv: list = None) -> None:
         self.laneline_id = laneline_id_in
-        self.laneline_class = laneline_class_in
+        self.laneline_clss = laneline_clss_in
         if laneline_points_utm_in is not None:
             self.laneline_points_utm = laneline_points_utm_in
             if laneline_points_label_image_in is None:
@@ -498,6 +498,7 @@ class LANELINE:
                 self.laneline_points_label_image = laneline_points_label_image_in
         else:
             self.laneline_points_label_image = laneline_points_label_image_in
+        self.laneline_exist_flag = True
 
     def utm_to_bev(self, laneline_points_utm: dict, utm_x: float, utm_y: float,
                    att_z: float, label_image_wh: list, label_range: list,
@@ -533,6 +534,17 @@ class LANELINE:
                 temp_line.append([u, v])
 
         return temp_line
+
+    def delete_laneline_information(self) -> None:
+        """[清除laneline信息]
+        """
+
+        self.laneline_clss = ''
+        self.laneline_exist_flag = False
+        self.laneline_points_utm = []
+        self.laneline_points_label_image = []
+
+        return
 
 
 class IMAGE:
@@ -655,77 +667,100 @@ class IMAGE:
                         one_object.delete_segmentation_information()
         else:
             for task, task_class_dict in dataset_instance.task_dict.items():
-                if task_class_dict is None:
-                    for one_object in self.object_list:
-                        if task == 'Detection':
-                            one_object.delete_box_information()
-                        elif task == 'Semantic_segmentation':
-                            one_object.delete_segmentation_information()
-                        elif task == 'Keypoints':
-                            one_object.delete_keypoints_information()
-                else:
-                    if task_class_dict['Source_dataset_class'] is not None:
+                if task in ['Detection', 'Semantic_segmentation', 'Keypoints']:
+                    if task_class_dict is None:
                         for one_object in self.object_list:
-                            if one_object.object_clss not in task_class_dict[
-                                    'Source_dataset_class']:
-                                one_object.delete_box_information()
-                                one_object.delete_segmentation_information()
-                                one_object.delete_keypoints_information()
-                    if task_class_dict['Modify_class_dict'] is not None:
-                        for one_object in self.object_list:
-                            # 遍历融合类别文件字典，完成label中的类别修改，
-                            # 若此bbox类别属于混合标签类别列表，则返回该标签在混合类别列表的索引值，修改类别。
                             if task == 'Detection':
-                                not_in_modify_class_dict = True
-                                for key, value in task_class_dict[
-                                        'Modify_class_dict'].items():
-                                    if one_object.box_clss in set(value):
-                                        one_object.box_clss = key
-                                        one_object.object_clss = one_object.box_clss
-                                        not_in_modify_class_dict = False
-                                if not_in_modify_class_dict:
-                                    one_object.delete_box_information()
+                                one_object.delete_box_information()
                             elif task == 'Semantic_segmentation':
-                                not_in_modify_class_dict = True
-                                for key, value in task_class_dict[
-                                        'Modify_class_dict'].items():
-                                    if one_object.segmentation_clss in set(
-                                            value):
-                                        one_object.segmentation_clss = key
-                                        one_object.object_clss = one_object.segmentation_clss
-                                        not_in_modify_class_dict = False
-                                if not_in_modify_class_dict:
-                                    one_object.delete_segmentation_information(
-                                    )
-                            elif task == 'Instance_segmentation':
-                                not_in_modify_class_dict_box = True
-                                not_in_modify_class_dict_segmentation = True
-                                for key, value in task_class_dict[
-                                        'Modify_class_dict'].items():
-                                    if one_object.box_clss in set(value):
-                                        one_object.box_clss = key
-                                        one_object.object_clss = one_object.box_clss
-                                        not_in_modify_class_dict_box = False
-                                    if one_object.segmentation_clss in set(
-                                            value):
-                                        one_object.segmentation_clss = key
-                                        one_object.object_clss = one_object.segmentation_clss
-                                        not_in_modify_class_dict_segmentation = False
-                                if not_in_modify_class_dict_box and not_in_modify_class_dict_segmentation:
+                                one_object.delete_segmentation_information()
+                            elif task == 'Keypoints':
+                                one_object.delete_keypoints_information()
+                    else:
+                        if task_class_dict['Source_dataset_class'] is not None:
+                            for one_object in self.object_list:
+                                if one_object.object_clss not in task_class_dict[
+                                        'Source_dataset_class']:
                                     one_object.delete_box_information()
                                     one_object.delete_segmentation_information(
                                     )
-                            elif task == 'Keypoint':
-                                not_in_modify_class_dict = True
-                                for key, value in task_class_dict[
-                                        'Modify_class_dict'].items():
-                                    if one_object.keypoints_class in set(
-                                            value):
-                                        one_object.keypoints_class = key
-                                        not_in_modify_class_dict = False
-                                if not_in_modify_class_dict:
                                     one_object.delete_keypoints_information()
+                        if task_class_dict['Modify_class_dict'] is not None:
+                            for one_object in self.object_list:
+                                # 遍历融合类别文件字典，完成label中的类别修改，
+                                # 若此bbox类别属于混合标签类别列表，则返回该标签在混合类别列表的索引值，修改类别。
+                                if task == 'Detection':
+                                    not_in_modify_class_dict = True
+                                    for key, value in task_class_dict[
+                                            'Modify_class_dict'].items():
+                                        if one_object.box_clss in set(value):
+                                            one_object.box_clss = key
+                                            one_object.object_clss = one_object.box_clss
+                                            not_in_modify_class_dict = False
+                                    if not_in_modify_class_dict:
+                                        one_object.delete_box_information()
+                                elif task == 'Semantic_segmentation':
+                                    not_in_modify_class_dict = True
+                                    for key, value in task_class_dict[
+                                            'Modify_class_dict'].items():
+                                        if one_object.segmentation_clss in set(
+                                                value):
+                                            one_object.segmentation_clss = key
+                                            one_object.object_clss = one_object.segmentation_clss
+                                            not_in_modify_class_dict = False
+                                    if not_in_modify_class_dict:
+                                        one_object.delete_segmentation_information(
+                                        )
+                                elif task == 'Instance_segmentation':
+                                    not_in_modify_class_dict_box = True
+                                    not_in_modify_class_dict_segmentation = True
+                                    for key, value in task_class_dict[
+                                            'Modify_class_dict'].items():
+                                        if one_object.box_clss in set(value):
+                                            one_object.box_clss = key
+                                            one_object.object_clss = one_object.box_clss
+                                            not_in_modify_class_dict_box = False
+                                        if one_object.segmentation_clss in set(
+                                                value):
+                                            one_object.segmentation_clss = key
+                                            one_object.object_clss = one_object.segmentation_clss
+                                            not_in_modify_class_dict_segmentation = False
+                                    if not_in_modify_class_dict_box and not_in_modify_class_dict_segmentation:
+                                        one_object.delete_box_information()
+                                        one_object.delete_segmentation_information(
+                                        )
+                                elif task == 'Keypoint':
+                                    not_in_modify_class_dict = True
+                                    for key, value in task_class_dict[
+                                            'Modify_class_dict'].items():
+                                        if one_object.keypoints_class in set(
+                                                value):
+                                            one_object.keypoints_class = key
+                                            not_in_modify_class_dict = False
+                                    if not_in_modify_class_dict:
+                                        one_object.delete_keypoints_information(
+                                        )
 
+        return
+
+    def laneline_class_modify(self, dataset_instance: object) -> None:
+        """车道线类别修改
+
+        Args:
+            dataset_instance (object): 数据集类
+        """
+        
+        for task, task_class_dict in dataset_instance.task_dict.items():
+            if task in ['Laneline']:
+                for one_laneline in self.laneline_list:
+                    if task_class_dict['Modify_class_dict'] is not None:
+                        for key, value in task_class_dict[
+                                'Modify_class_dict'].items():
+                            if one_laneline.laneline_clss in set(value):
+                                one_laneline.laneline_clss = key
+                            else:
+                                self.laneline_list.pop(one_laneline)
+                        
         return
 
     def object_pixel_limit(self, dataset_instance: object) -> None:
@@ -858,7 +893,7 @@ class IMAGE:
         for laneline in self.laneline_list:
             laneline_dict = {
                 'id': laneline_id,
-                'laneline_clss': laneline.laneline_class,
+                'laneline_clss': laneline.laneline_clss,
                 'laneline_points_utm': laneline.laneline_points_utm,
                 'laneline_points_label_image':
                 laneline.laneline_points_label_image
@@ -870,3 +905,6 @@ class IMAGE:
         json.dump(annotation, open(temp_annotation_output_path, 'w'))
 
         return True
+
+    def laneline_curvature_limit(self):
+        pass

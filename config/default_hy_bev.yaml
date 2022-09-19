@@ -28,20 +28,37 @@ File_prefix_delimiter: "@"
 # TI_EDGEAILITE_AUTO_ANNOTATION
 Source_dataset_style: CVAT_IMAGE_BEV_3_MAP
 # 目标数据集类型：
-# NUSCENES, PYVA, CVT, HY_BEV
+# NUSCENES, PYVA, CVT, HY_BEV, HDMAPNET
 # COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO
-Target_dataset_style: HY_BEV
+Target_dataset_style: HDMAPNET
 
 # 标注车型（hq1, hq2, lt1, lt2）
 Annotation_car: hq1
-# 目标数据集视角:
+# 目标数据集视角（perspective）:
 Target_dataset_view: BEV
+# laneline曲率限制
+Curvature_limit:
 # 是否包含地图
 Get_local_map: True
 # 是否删除无地图样本
 Delete_no_map: True
 # lat_lon_origin城市
 Lat_lon_origin_city: wuhan
+# 地图原点
+Lat_lon_origin_point:
+  wuhan:
+    lat: 30.425457029885372151
+    lon: 114.09623523096009023
+  shenzhen:
+    lat: 22.6860589
+    lon: 114.3779897
+  changchun':
+    lat: 43.8285543
+    lon: 125.1564909
+  suzhou:
+    lat: 31.3227443
+    lon: 120.7274488
+
 # 是否添加mask
 Draw_car_mask: True
 # 是否保存无训练目标图片
@@ -114,6 +131,10 @@ Task_and_class_config:
   #   Source_dataset_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_20211116.names
   #   Modify_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_to_3_classes.txt
   #   Target_each_class_object_pixel_limit_file_path:
+  Laneline:
+    Source_dataset_class_file_path: data/class/laneline/hy_laneline_2_classes_20220919.name
+    Modify_class_file_path:
+    Target_each_class_object_pixel_limit_file_path:
 
 # 图像标定内外参数
 Camera_calibration_file_path:
