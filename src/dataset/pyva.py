@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-19 22:44:30
+LastEditTime: 2022-09-20 11:12:35
 '''
 import shutil
 import multiprocessing
@@ -201,7 +201,7 @@ class PYVA(Dataset_Base):
             class_names_dict (dict): [labelIds类别名对应id字典]
             x (str): [标签文件名称]
         """
-
+        
         file_name = os.path.splitext(source_image_path.split(os.sep)[-1])[0]
         input_image_output_path = os.path.join(output_folder_path_list[0],
                                                file_name + '.jpg')

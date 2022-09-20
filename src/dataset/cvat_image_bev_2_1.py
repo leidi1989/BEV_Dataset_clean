@@ -4,10 +4,9 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-19 20:03:42
+LastEditTime: 2022-09-20 11:01:00
 '''
 import multiprocessing
-from pydoc import isdata, ispath
 import shutil
 import xml.etree.ElementTree as ET
 
@@ -113,7 +112,7 @@ class CVAT_IMAGE_BEV_2_1(Dataset_Base):
                             self.source_dataset_annotations_folder,
                             n + '_' + m)
                         shutil.copy(annotation_path, temp_annotation_path)
-
+        self.camera_image_wh = [0, 0]
         print('Copy images and annotations end.')
 
         return

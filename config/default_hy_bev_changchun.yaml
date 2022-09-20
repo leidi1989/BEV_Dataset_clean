@@ -131,10 +131,10 @@ Task_and_class_config:
   #   Source_dataset_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_20211116.names
   #   Modify_class_file_path: Clean_up/data/segmentation/segment_classes_huaweiyun_segmentation_183_classes_to_3_classes.txt
   #   Target_each_class_object_pixel_limit_file_path:
-  Laneline:
-    Source_dataset_class_file_path: data/class/laneline/hy_laneline_2_classes_20220919.name
-    Modify_class_file_path:
-    Target_each_class_object_pixel_limit_file_path:
+  # Laneline:
+  #   Source_dataset_class_file_path: data/class/laneline/hy_laneline_2_classes_20220919.name
+  #   Modify_class_file_path:
+  #   Target_each_class_object_pixel_limit_file_path:
 
 # 图像标定内外参数
 Camera_calibration_file_path:
