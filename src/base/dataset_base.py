@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-19 19:24:39
+LastEditTime: 2022-09-25 19:59:14
 '''
 import ftplib
 import json
@@ -142,6 +142,7 @@ class Dataset_Base:
         # MAP
         self.get_local_map = dataset_config['Get_local_map']
         self.delete_no_map = dataset_config['Delete_no_map']
+        self.only_local_map = dataset_config['Only_local_map']
         self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
 
         # File_prefix

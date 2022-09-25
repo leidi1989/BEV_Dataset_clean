@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-19 16:51:52
+LastEditTime: 2022-09-25 20:01:41
 '''
 import multiprocessing
 import shutil
@@ -521,69 +521,70 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         annotation_children_node = annotation.getchildren()
         # get object box head orin
         head_points_dict = {}
-        for obj in annotation_children_node:
-            if obj.tag != 'points':  # 只处理points标签
-                continue
-            obj_children_node = obj.getchildren()
-            if obj_children_node[0].text is None:
-                continue
-            head_point_id = ''.join(
-                list(filter(str.isnumeric, obj_children_node[0].text)))
-            point_list = list(map(float, obj.attrib['points'].split(',')))
-            head_points_dict.update({head_point_id: point_list})
-        # get object information
-        for n, obj in enumerate(annotation_children_node):
-            if obj.tag != 'box':  # 只处理box标签
-                continue
-            # if 'group_id' not in obj.attrib:
-            #     continue
-            obj_children_node = obj.getchildren()
-            for one_obj_children_node in obj_children_node:
-                if one_obj_children_node.attrib['name'] == 'visibility':
+        if not self.only_local_map:
+            for obj in annotation_children_node:
+                if obj.tag != 'points':  # 只处理points标签
                     continue
-                if one_obj_children_node.text is None:
-                    object_head_point_id = None
-                    clss = obj.attrib['label']
+                obj_children_node = obj.getchildren()
+                if obj_children_node[0].text is None:
+                    continue
+                head_point_id = ''.join(
+                    list(filter(str.isnumeric, obj_children_node[0].text)))
+                point_list = list(map(float, obj.attrib['points'].split(',')))
+                head_points_dict.update({head_point_id: point_list})
+            # get object information
+            for n, obj in enumerate(annotation_children_node):
+                if obj.tag != 'box':  # 只处理box标签
+                    continue
+                # if 'group_id' not in obj.attrib:
+                #     continue
+                obj_children_node = obj.getchildren()
+                for one_obj_children_node in obj_children_node:
+                    if one_obj_children_node.attrib['name'] == 'visibility':
+                        continue
+                    if one_obj_children_node.text is None:
+                        object_head_point_id = None
+                        clss = obj.attrib['label']
+                    else:
+                        object_head_point_id = ''.join(
+                            list(filter(str.isnumeric,
+                                        one_obj_children_node.text)))
+                        clss = ''.join(
+                            list(filter(str.isalpha, one_obj_children_node.text)))
+                clss = clss.replace(' ', '').lower()
+                if clss not in self.total_task_source_class_list:
+                    continue
+                box_xywh = [
+                    int(float(obj.attrib['xtl'])),
+                    int(float(obj.attrib['ytl'])),
+                    int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
+                    int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+                ]
+                box_xtlytlxbrybr = [
+                    float(obj.attrib['xtl']),
+                    float(obj.attrib['ytl']),
+                    float(obj.attrib['xbr']),
+                    float(obj.attrib['ybr'])
+                ]
+                if 'rotation' in obj.attrib:
+                    box_rotation = float(obj.attrib['rotation'])
                 else:
-                    object_head_point_id = ''.join(
-                        list(filter(str.isnumeric,
-                                    one_obj_children_node.text)))
-                    clss = ''.join(
-                        list(filter(str.isalpha, one_obj_children_node.text)))
-            clss = clss.replace(' ', '').lower()
-            if clss not in self.total_task_source_class_list:
-                continue
-            box_xywh = [
-                int(float(obj.attrib['xtl'])),
-                int(float(obj.attrib['ytl'])),
-                int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
-                int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
-            ]
-            box_xtlytlxbrybr = [
-                float(obj.attrib['xtl']),
-                float(obj.attrib['ytl']),
-                float(obj.attrib['xbr']),
-                float(obj.attrib['ybr'])
-            ]
-            if 'rotation' in obj.attrib:
-                box_rotation = float(obj.attrib['rotation'])
-            else:
-                box_rotation = 0
-            # get head orientation
-            if object_head_point_id is not None and object_head_point_id in head_points_dict:
-                box_head_point = head_points_dict[object_head_point_id]
-            else:
-                box_head_point = None
-            object_list.append(
-                OBJECT(n,
-                       clss,
-                       box_clss=clss,
-                       box_xywh=box_xywh,
-                       box_xtlytlxbrybr=box_xtlytlxbrybr,
-                       box_rotation=box_rotation +
-                       self.label_object_rotation_angle,
-                       box_head_point=box_head_point,
-                       need_convert=self.need_convert))
+                    box_rotation = 0
+                # get head orientation
+                if object_head_point_id is not None and object_head_point_id in head_points_dict:
+                    box_head_point = head_points_dict[object_head_point_id]
+                else:
+                    box_head_point = None
+                object_list.append(
+                    OBJECT(n,
+                        clss,
+                        box_clss=clss,
+                        box_xywh=box_xywh,
+                        box_xtlytlxbrybr=box_xtlytlxbrybr,
+                        box_rotation=box_rotation +
+                        self.label_object_rotation_angle,
+                        box_head_point=box_head_point,
+                        need_convert=self.need_convert))
 
         # local map
         image_ego_pose = None
@@ -618,14 +619,15 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                                     [4])) == 0:
                             osm_file_name = temp_osm_name
                             break
-
-            if self.delete_no_map and osm_file_name == '':
-                # print('{} no map, has been delete.'.format(image_name_new))
-                # if not self.only_statistic:
-                #     os.remove(image_path)
-                # process_output['no_object'] += 1
-                # process_output['fail_count'] += 1
-                return
+            if self.only_local_map:
+                if self.delete_no_map and osm_file_name == '':
+                    print('{} no map, has been delete.'.format(image_name_new))
+                    if not self.only_statistic:
+                        os.remove(image_path)
+                    process_output['no_object'] += 1
+                    process_output['fail_count'] += 1
+                    
+                    return
 
             # image_ego_pose
             lat, lon, el = float(
