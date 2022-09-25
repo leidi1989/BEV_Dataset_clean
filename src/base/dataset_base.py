@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-25 19:59:14
+LastEditTime: 2022-09-25 20:07:02
 '''
 import ftplib
 import json
@@ -32,10 +32,10 @@ plt.switch_backend('agg')
 # matplotlib.use('TkAgg')
 
 SOURCE_DATASET_STYLE = [
-    'CVAT_IMAGE_BEV_GROUP', 'CVAT_IMAGE_BEV_1', 'CVAT_IMAGE_BEV_2', 'CVAT_IMAGE_BEV_2_1',
-    'CVAT_IMAGE_BEV_NAS', 'COCO2017', 'YUNCE_SEGMENT_COCO',
-    'YUNCE_SEGMENT_COCO_ONE_IMAGE', 'HUAWEIYUN_SEGMENT', 'HY_VAL', 'BDD100K',
-    'YOLO', 'TT100K', 'CCTSDB', 'LISA'
+    'CVAT_IMAGE_BEV_GROUP', 'CVAT_IMAGE_BEV_1', 'CVAT_IMAGE_BEV_2',
+    'CVAT_IMAGE_BEV_2_1', 'CVAT_IMAGE_BEV_NAS', 'COCO2017',
+    'YUNCE_SEGMENT_COCO', 'YUNCE_SEGMENT_COCO_ONE_IMAGE', 'HUAWEIYUN_SEGMENT',
+    'HY_VAL', 'BDD100K', 'YOLO', 'TT100K', 'CCTSDB', 'LISA'
 ]
 
 TARGET_DATASET_STYLE = [
@@ -2145,7 +2145,6 @@ class Dataset_Base:
                     image.image_name_new)
                 label_image = cv2.imread(label_image_path)
 
-            
             zeros1 = np.zeros((label_image.shape), dtype=np.uint8)
             zeros1_mask = np.zeros((label_image.shape), dtype=np.uint8)
             image.laneline_list = sorted(image.laneline_list,

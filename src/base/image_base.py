@@ -749,7 +749,7 @@ class IMAGE:
         Args:
             dataset_instance (object): 数据集类
         """
-        
+
         for task, task_class_dict in dataset_instance.task_dict.items():
             if task in ['Laneline']:
                 for one_laneline in self.laneline_list:
@@ -760,7 +760,7 @@ class IMAGE:
                                 one_laneline.laneline_clss = key
                             else:
                                 self.laneline_list.pop(one_laneline)
-                        
+
         return
 
     def object_pixel_limit(self, dataset_instance: object) -> None:
