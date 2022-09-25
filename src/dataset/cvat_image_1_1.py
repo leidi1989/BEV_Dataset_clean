@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 17:02:56
+LastEditTime: 2022-09-25 18:04:34
 '''
 import shutil
 import multiprocessing
@@ -385,7 +385,8 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                         attribute = ET.SubElement(points, 'attribute', {
                             'name': '1'})
                         attribute.text = str(object.object_id)+'-'+m
-            elif task == 'Laneline':
+        for object in image.object_list:
+            if task == 'Laneline':
                 clss = object.keypoints_clss
                 if clss not in task_class_dict['Target_dataset_class']:
                     continue
