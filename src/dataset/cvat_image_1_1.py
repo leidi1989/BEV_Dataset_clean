@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 19:48:46
+LastEditTime: 2022-09-25 19:50:01
 '''
 import shutil
 import multiprocessing
@@ -342,6 +342,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     if clss not in task_class_dict['Target_dataset_class']:
                         continue
                     if object.box_exist_flag:
+                        # TODO 点的旋转需要修复
                         object.box_rotated_rect_points, object.box_size_erro = object.rotated_rect_point(
                             object.box_xtlytlxbrybr[0],
                             object.box_xtlytlxbrybr[1],
