@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 19:16:44
+LastEditTime: 2022-09-25 19:45:32
 '''
 import shutil
 import multiprocessing
@@ -342,11 +342,22 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     if clss not in task_class_dict['Target_dataset_class']:
                         continue
                     if object.box_exist_flag:
+                        # TODO 修改box_xtlytlxbrybr
+                        object.box_rotated_rect_points, object.box_size_erro = object.rotated_rect_point(
+                            object.box_xtlytlxbrybr[0],
+                            object.box_xtlytlxbrybr[1],
+                            object.box_xtlytlxbrybr[2],
+                            object.box_xtlytlxbrybr[3], -object.box_rotation)
+                        sorted(object.box_rotated_rect_points,key=(lambda x:[x[1],x[0]]),reverse=True)
                         box = ET.SubElement(
                             image_xml, 'box', {
                                 'label': object.box_clss,
                                 'occluded': '0',
                                 'source': 'manual',
+                                # 'xtl': str(object.box_rotated_rect_points[0][0]),
+                                # 'ytl': str(object.box_rotated_rect_points[0][1]),
+                                # 'xbr': str(object.box_rotated_rect_points[2][0]),
+                                # 'ybr': str(object.box_rotated_rect_points[2][1]),
                                 'xtl': str(object.box_xtlytlxbrybr[0]),
                                 'ytl': str(object.box_xtlytlxbrybr[1]),
                                 'xbr': str(object.box_xtlytlxbrybr[2]),
