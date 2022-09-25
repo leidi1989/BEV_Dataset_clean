@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 20:01:41
+LastEditTime: 2022-09-25 20:04:08
 '''
 import multiprocessing
 import shutil
@@ -517,11 +517,13 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             channels = 3
         width = int(annotation.attrib['width'])
         height = int(annotation.attrib['height'])
+
+        # get object annotation
         object_list = []
-        annotation_children_node = annotation.getchildren()
-        # get object box head orin
-        head_points_dict = {}
         if not self.only_local_map:
+            annotation_children_node = annotation.getchildren()
+            # get object box head orin
+            head_points_dict = {}
             for obj in annotation_children_node:
                 if obj.tag != 'points':  # 只处理points标签
                     continue
@@ -547,10 +549,13 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                         clss = obj.attrib['label']
                     else:
                         object_head_point_id = ''.join(
-                            list(filter(str.isnumeric,
-                                        one_obj_children_node.text)))
+                            list(
+                                filter(str.isnumeric,
+                                       one_obj_children_node.text)))
                         clss = ''.join(
-                            list(filter(str.isalpha, one_obj_children_node.text)))
+                            list(
+                                filter(str.isalpha,
+                                       one_obj_children_node.text)))
                 clss = clss.replace(' ', '').lower()
                 if clss not in self.total_task_source_class_list:
                     continue
@@ -577,14 +582,14 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     box_head_point = None
                 object_list.append(
                     OBJECT(n,
-                        clss,
-                        box_clss=clss,
-                        box_xywh=box_xywh,
-                        box_xtlytlxbrybr=box_xtlytlxbrybr,
-                        box_rotation=box_rotation +
-                        self.label_object_rotation_angle,
-                        box_head_point=box_head_point,
-                        need_convert=self.need_convert))
+                           clss,
+                           box_clss=clss,
+                           box_xywh=box_xywh,
+                           box_xtlytlxbrybr=box_xtlytlxbrybr,
+                           box_rotation=box_rotation +
+                           self.label_object_rotation_angle,
+                           box_head_point=box_head_point,
+                           need_convert=self.need_convert))
 
         # local map
         image_ego_pose = None
@@ -626,7 +631,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                         os.remove(image_path)
                     process_output['no_object'] += 1
                     process_output['fail_count'] += 1
-                    
+
                     return
 
             # image_ego_pose
