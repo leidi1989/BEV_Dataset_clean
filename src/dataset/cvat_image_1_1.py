@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-02-23 10:25:36
+LastEditTime: 2022-09-25 17:02:56
 '''
 import shutil
 import multiprocessing
@@ -372,6 +372,20 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     'name': '1'})
                 attribute.text = object.segmentation_clss+str(object.object_id)
             elif task == 'Keypoint':
+                clss = object.keypoints_clss
+                if clss not in task_class_dict['Target_dataset_class']:
+                    continue
+                if object.keypoints_exist_flag:
+                    for m, xy in object.keypoints:
+                        points = ET.SubElement(image_xml, 'points', {
+                            'label': object.keypoints_clss, 'occluded': '0', 'source': 'manual',
+                            'points': str(xy[0])+','+str(xy[1]),
+                            'z_order': "0",
+                            'group_id': str(object.object_id)})
+                        attribute = ET.SubElement(points, 'attribute', {
+                            'name': '1'})
+                        attribute.text = str(object.object_id)+'-'+m
+            elif task == 'Laneline':
                 clss = object.keypoints_clss
                 if clss not in task_class_dict['Target_dataset_class']:
                     continue

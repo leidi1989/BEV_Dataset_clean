@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-09-20 10:56:39
+LastEditTime: 2022-09-25 16:45:31
 '''
 import argparse
 import time
@@ -36,8 +36,8 @@ def clean(dataset_config: dict) -> None:
 
     if not Input_dataset.only_statistic:
         # 输出并检测指定形式数据集
-        # dataset.__dict__[dataset_config[
-        #     'Target_dataset_style']].target_dataset(Input_dataset)
+        dataset.__dict__[dataset_config[
+            'Target_dataset_style']].target_dataset(Input_dataset)
         Input_dataset.target_dataset_annotation_check()
 
         # 生成指定形式数据集组织结构
