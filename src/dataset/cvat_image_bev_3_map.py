@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 20:04:08
+LastEditTime: 2022-09-25 20:06:31
 '''
 import multiprocessing
 import shutil
@@ -13,7 +13,6 @@ import xml.etree.ElementTree as ET
 import cv2
 import lanelet2
 import utm
-
 from base.dataset_base import Dataset_Base
 from base.image_base import *
 from utils import image_form_transform
