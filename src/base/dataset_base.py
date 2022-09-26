@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-25 20:07:02
+LastEditTime: 2022-09-26 17:00:46
 '''
 import ftplib
 import json
@@ -217,6 +217,7 @@ class Dataset_Base:
         self.label_object_rotation_angle = dataset_config[
             'Label_object_rotation_angle']
         self.temp_divide_file_annotation_path_dict = {}
+        self.camera_label_image_concat = dataset_config['Camera_label_image_concat']
         self.camera_image_wh = [
             int(x) for x in (dataset_config['Camera_image_wh'].split(','))
         ]

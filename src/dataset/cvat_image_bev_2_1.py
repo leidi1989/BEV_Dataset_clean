@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-26 16:17:39
+LastEditTime: 2022-09-26 17:09:39
 '''
 import multiprocessing
 import shutil
@@ -362,23 +362,40 @@ class CVAT_IMAGE_BEV_2_1(Dataset_Base):
                 continue
             box_xywh = []
             x = int(float(obj.attrib['xtl']))
-            y = int(float(obj.attrib['ytl']))
-            w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
-            h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
-            box_xywh = [x, y, w, h]
-            box_xtlytlxbrybr = [
-                float(obj.attrib['xtl']),
-                float(obj.attrib['ytl']),
-                float(obj.attrib['xbr']),
-                float(obj.attrib['ybr'])
-            ]
+            if not self.camera_label_image_concat:
+                y = int(float(obj.attrib['ytl']))
+                w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
+                h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+                box_xywh = [x, y, w, h]
+                box_xtlytlxbrybr = [
+                    float(obj.attrib['xtl']),
+                    float(obj.attrib['ytl']),
+                    float(obj.attrib['xbr']),
+                    float(obj.attrib['ybr'])
+                ]
+            else:
+                y = int(float(obj.attrib['ytl']) - self.camera_image_wh[1])
+                w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
+                h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+                box_xywh = [x, y, w, h]
+                box_xtlytlxbrybr = [
+                    float(obj.attrib['xtl']),
+                    float(obj.attrib['ytl']) - self.camera_image_wh[1],
+                    float(obj.attrib['xbr']),
+                    float(obj.attrib['ybr']) - self.camera_image_wh[1]
+                ]
             if 'rotation' in obj.attrib:
                 box_rotation = float(obj.attrib['rotation'])
             else:
                 box_rotation = 0
             # get head orientation
             if object_head_point_id is not None and object_head_point_id in head_points_dict:
-                box_head_point = head_points_dict[object_head_point_id]
+                if not self.camera_label_image_concat:
+                    box_head_point = head_points_dict[object_head_point_id]
+                else:
+                    box_head_point = head_points_dict[object_head_point_id]
+                    box_head_point[
+                        1] = box_head_point[1] - self.camera_image_wh[1]
             else:
                 box_head_point = None
             object_list.append(
