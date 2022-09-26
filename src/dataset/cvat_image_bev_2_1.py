@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-26 17:09:39
+LastEditTime: 2022-09-26 19:01:14
 '''
 import multiprocessing
 import shutil
@@ -323,7 +323,10 @@ class CVAT_IMAGE_BEV_2_1(Dataset_Base):
         else:
             channels = 3
         width = int(annotation.attrib['width'])
-        height = int(annotation.attrib['height'])
+        if not self.camera_label_image_concat:
+            height = int(annotation.attrib['height'])
+        else:
+            height = int(int(annotation.attrib['height']) - self.camera_image_wh[1])
         object_list = []
         annotation_children_node = annotation.getchildren()
         # get object box head orin
