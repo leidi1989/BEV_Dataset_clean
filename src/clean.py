@@ -24,14 +24,14 @@ def clean(dataset_config: dict) -> None:
     Input_dataset = dataset.__dict__[dataset_config['Source_dataset_style']](
         dataset_config)
     # Input_dataset.source_dataset_copy_image_and_annotation()
-    Input_dataset.transform_to_temp_dataset()
-    Input_dataset.output_classname_file()
-    if not Input_dataset.only_statistic:
-        Input_dataset.delete_redundant_image_annotation()
-        Input_dataset.get_dataset_image_mean_std()
-        Input_dataset.check_dataset_image_mean_std()
-        pass
-    Input_dataset.divide_dataset()
+    # Input_dataset.transform_to_temp_dataset()
+    # Input_dataset.output_classname_file()
+    # if not Input_dataset.only_statistic:
+    #     Input_dataset.delete_redundant_image_annotation()
+    #     Input_dataset.get_dataset_image_mean_std()
+    #     Input_dataset.check_dataset_image_mean_std()
+    #     pass
+    # Input_dataset.divide_dataset()
     Input_dataset.sample_statistics()
 
     if not Input_dataset.only_statistic:

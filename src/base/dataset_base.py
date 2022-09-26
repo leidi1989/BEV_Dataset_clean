@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-26 17:00:46
+LastEditTime: 2022-09-26 17:20:17
 '''
 import ftplib
 import json
@@ -217,7 +217,8 @@ class Dataset_Base:
         self.label_object_rotation_angle = dataset_config[
             'Label_object_rotation_angle']
         self.temp_divide_file_annotation_path_dict = {}
-        self.camera_label_image_concat = dataset_config['Camera_label_image_concat']
+        self.camera_label_image_concat = dataset_config[
+            'Camera_label_image_concat']
         self.camera_image_wh = [
             int(x) for x in (dataset_config['Camera_image_wh'].split(','))
         ]
@@ -2534,9 +2535,15 @@ class Dataset_Base:
             tuple: (x,y)
         """
         # 计算本车中心点像素坐标(图片由上camera+下label组成)
-        self_ycenter = label_image_height * \
-            (front_range/(front_range+back_range)) + camera_image_height
-        self_xcenter = label_image_width * (left_range /
-                                            (left_range + right_range))
+        if not self.camera_label_image_concat:
+            self_ycenter = label_image_height * \
+                (front_range/(front_range+back_range)) + camera_image_height
+            self_xcenter = label_image_width * (left_range /
+                                                (left_range + right_range))
+        else:
+            self_ycenter = label_image_height * \
+                (front_range/(front_range+back_range))
+            self_xcenter = label_image_width * (left_range /
+                                                (left_range + right_range))
 
         return (int(self_xcenter), int(self_ycenter))
