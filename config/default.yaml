@@ -42,7 +42,7 @@ Target_dataset_divide_proportion: 1,0,0,0
 # 多annotation.xml输入
 Multi_annotation_xml: True
 # 是否保存无训练目标图片
-Keep_no_object: False
+Keep_no_object: True
 # 检查图片车辆是否添加mask
 Draw_car_mask: True
 # 是否为二分类（backgound and object）:
