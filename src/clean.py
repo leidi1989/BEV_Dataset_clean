@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-09-26 19:02:31
+LastEditTime: 2022-09-27 15:38:56
 '''
 import argparse
 import time
@@ -23,7 +23,7 @@ def clean(dataset_config: dict) -> None:
 
     Input_dataset = dataset.__dict__[dataset_config['Source_dataset_style']](
         dataset_config)
-    # Input_dataset.source_dataset_copy_image_and_annotation()
+    Input_dataset.source_dataset_copy_image_and_annotation()
     Input_dataset.transform_to_temp_dataset()
     Input_dataset.output_classname_file()
     if not Input_dataset.only_statistic:

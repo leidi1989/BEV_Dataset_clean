@@ -12,11 +12,11 @@ Scp_to_train_server: False
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/relabel_raw_data_20220926/wuda_baishazhou_dftc_hq1_6v_000304050607_100_40_40_40_20220607
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/dongfenggaojia_hq1_6v_000304050607_100_40_40_40_20220524
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/relabel_raw_data_20220926/wuda_baishazhou_dftc_hq1_6v_000304050607_100_40_40_40_20220607_20220926
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/dongfenggaojia_hq1_6v_000304050607_100_40_40_40_20220524_20220927
 # 重命名前缀
-File_prefix: wuda2baishazhou2dftc
+File_prefix: dongfenggaojia
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
