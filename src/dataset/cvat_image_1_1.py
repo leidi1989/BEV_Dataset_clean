@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 14:25:36
+LastEditTime: 2022-09-28 19:40:44
 '''
 import shutil
 import multiprocessing
@@ -512,14 +512,14 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         random.shuffle(root)
         root = root[0:dataset_instance.target_dataset_annotations_check_count]
         for annotation in tqdm(root,
-                               desc='Load object annotation',
-                               leave=False):
+                            desc='Load object annotation',
+                            leave=False):
             if annotation.tag != 'image':
                 continue
             image_name = str(annotation.attrib['name'])
             image_name_new = image_name
             image_path = os.path.join(dataset_instance.temp_images_folder,
-                                      image_name_new)
+                                    image_name_new)
             img = cv2.imread(image_path)
             if img is None:
                 print('Can not load: {}'.format(image_name_new))
@@ -527,41 +527,98 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             width = int(annotation.attrib['width'])
             height = int(annotation.attrib['height'])
             channels = img.shape[-1]
-            object_list = []
-            for n, obj in enumerate(annotation):
-                if obj.tag == 'box':
-                    clss = str(obj.attrib['label'])
-                    clss = clss.replace(' ', '').lower()
-                    box_xywh = [
-                        int(obj.attrib['xtl']),
-                        int(obj.attrib['ytl']),
-                        int(obj.attrib['xbr']) - int(obj.attrib['xtl']),
-                        int(obj.attrib['ybr']) - int(obj.attrib['ytl'])
-                    ]
-                    object_list.append(
-                        OBJECT(n,
-                               clss,
-                               box_clss=clss,
-                               box_xywh=box_xywh,
-                               need_convert=dataset_instance.need_convert))
-                elif obj.tag == 'polygon':
-                    clss = str(obj.attrib['label'])
-                    clss = clss.replace(' ', '').lower()
-                    segment = []
-                    for seg in obj.attrib['points'].split(';'):
-                        x, y = seg.split(',')
-                        x = float(x)
-                        y = float(y)
-                        segment.append(list(map(int, [x, y])))
-                    object_list.append(
-                        OBJECT(n,
-                               clss,
-                               segmentation_clss=clss,
-                               segmentation=segment,
-                               need_convert=dataset_instance.need_convert))
-            image = IMAGE(image_name, image_name, image_path, int(height),
-                          int(width), int(channels), object_list)
-            check_images_list.append(image)
+            if not dataset_instance.only_local_map:
+                object_list = []
+                laneline_list = []
+                for n, obj in enumerate(annotation):
+                    if obj.tag == 'box':
+                        clss = str(obj.attrib['label'])
+                        clss = clss.replace(' ', '').lower()
+                        box_xywh = [
+                            int(obj.attrib['xtl']),
+                            int(obj.attrib['ytl']),
+                            int(obj.attrib['xbr']) - int(obj.attrib['xtl']),
+                            int(obj.attrib['ybr']) - int(obj.attrib['ytl'])
+                        ]
+                        object_list.append(
+                            OBJECT(n,
+                                clss,
+                                box_clss=clss,
+                                box_xywh=box_xywh,
+                                need_convert=dataset_instance.need_convert))
+                    elif obj.tag == 'polygon':
+                        clss = str(obj.attrib['label'])
+                        clss = clss.replace(' ', '').lower()
+                        segment = []
+                        for seg in obj.attrib['points'].split(';'):
+                            x, y = seg.split(',')
+                            x = float(x)
+                            y = float(y)
+                            segment.append(list(map(int, [x, y])))
+                        object_list.append(
+                            OBJECT(n,
+                                clss,
+                                segmentation_clss=clss,
+                                segmentation=segment,
+                                need_convert=dataset_instance.need_convert))
+                    elif obj.tag == 'polyline':
+                        clss = str(obj.attrib['label'])
+                        clss = clss.replace(' ', '').lower()
+                        laneline_point = []
+                        for seg in obj.attrib['points'].split(';'):
+                            x, y = seg.split(',')
+                            x = float(x)
+                            y = float(y)
+                            laneline_point.append(list(map(int, [x, y])))
+                        laneline_list.append(
+                            LANELINE(
+                                laneline_id_in=n,
+                                laneline_clss_in=clss,
+                                laneline_points_label_image_in=laneline_point,
+                                label_image_wh_in=dataset_instance.
+                                label_image_wh,
+                                label_range=dataset_instance.label_range,
+                            ))
+                image = IMAGE(image_name,
+                            image_name,
+                            image_path,
+                            int(height),
+                            int(width),
+                            int(channels),
+                            object_list_in=object_list,
+                            laneline_list_in=laneline_list)
+                check_images_list.append(image)
+            else:
+                object_list = []
+                laneline_list = []
+                for n, obj in enumerate(annotation):
+                    if obj.tag == 'polyline':
+                        clss = str(obj.attrib['label'])
+                        clss = clss.replace(' ', '').lower()
+                        laneline_point = []
+                        for seg in obj.attrib['points'].split(';'):
+                            x, y = seg.split(',')
+                            x = float(x)
+                            y = float(y)
+                            laneline_point.append(list(map(int, [x, y])))
+                        laneline_list.append(
+                            LANELINE(
+                                laneline_id_in=n,
+                                laneline_clss_in=clss,
+                                laneline_points_label_image_in=laneline_point,
+                                label_image_wh=dataset_instance.
+                                label_image_wh,
+                                label_range=dataset_instance.label_range,
+                            ))
+                image = IMAGE(image_name,
+                            image_name,
+                            image_path,
+                            int(height),
+                            int(width),
+                            int(channels),
+                            object_list_in=object_list,
+                            laneline_list_in=laneline_list)
+                check_images_list.append(image)
 
         return check_images_list
 
@@ -621,7 +678,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     dataset_instance.target_dataset_annotations_folder,
                     annotations_output_folder)
                 shutil.copy(annotations_input_path, annotations_output_path)
-        
+
         print('Start copy annotations:')
 
         return

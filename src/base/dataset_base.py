@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-26 17:20:17
+LastEditTime: 2022-09-28 19:34:49
 '''
 import ftplib
 import json
@@ -2140,12 +2140,16 @@ class Dataset_Base:
                 label_image_path = os.path.join(
                     self.source_dataset_annotation_image_folder,
                     image.image_name_new)
-                label_image = cv2.imread(label_image_path)
             else:
-                label_image_path = os.path.join(
-                    self.target_dataset_annotation_check_output_folder,
-                    image.image_name_new)
-                label_image = cv2.imread(label_image_path)
+                if not self.only_local_map:
+                    label_image_path = os.path.join(
+                        self.target_dataset_annotation_check_output_folder,
+                        image.image_name_new)
+                else:
+                    label_image_path = os.path.join(
+                        self.source_dataset_annotation_image_folder,
+                        image.image_name_new)
+            label_image = cv2.imread(label_image_path)
 
             zeros1 = np.zeros((label_image.shape), dtype=np.uint8)
             zeros1_mask = np.zeros((label_image.shape), dtype=np.uint8)

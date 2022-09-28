@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 15:47:39
+LastEditTime: 2022-09-28 19:56:57
 '''
 import multiprocessing
 import shutil
@@ -654,19 +654,19 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             osm_file_name = ''
             local_map_vision_box = lanelet2.core.BoundingBox2d(
                 lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
-                                        utm_y - self.utm_offset),
+                                           utm_y - self.utm_offset),
                 lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
-                                        utm_y + self.utm_offset))
+                                           utm_y + self.utm_offset))
             for temp_osm_name, lanelet_layer in (lanelet_layers).items():
                 lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
                 if len(lanelets_inRegion):
                     for elem in lanelets_inRegion:
                         if lanelet2.geometry.distance(
                                 elem, lanelet2.core.BasicPoint2d(utm_x,
-                                                                utm_y)) == 0:
+                                                                 utm_y)) == 0:
                             osm_file_name = temp_osm_name
                             break
-                        
+
             # for temp_osm_name, lanelet_layer in (lanelet_linestringlayer).items():
             #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
             #     if len(lanelets_inRegion):
@@ -676,7 +676,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             #                                                      utm_y)) == 0:
             #                 osm_file_name = temp_osm_name
             #                 break
-            
+
             # if osm_file_name == '':
             #     print('Do not find osm file name!')
             #     return
@@ -733,7 +733,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                         laneline_points_utm_in=laneline_points_utm,
                         utm_x=utm_x,
                         utm_y=utm_y,
-                        att_z=utm_z,
+                        att_z=self.image_ego_pose_dict[image_name_new][8],
                         label_image_wh=self.label_image_wh,
                         label_range=self.label_range,
                         label_image_self_car_uv=self.label_image_self_car_uv)
@@ -840,7 +840,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                                                              utm_y)) == 0:
                         osm_file_name = temp_osm_name
                         break
-                    
+
         # for temp_osm_name, lanelet_layer in (lanelet_linestringlayer).items():
         #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
         #     if len(lanelets_inRegion):
@@ -850,10 +850,10 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         #                                                      utm_y)) == 0:
         #                 osm_file_name = temp_osm_name
         #                 break
-        
-        # if osm_file_name == '':
-        #     print('Do not find osm file name!')
-        #     return
+
+        if osm_file_name == '':
+            print('Do not find osm file name!')
+            return
 
         image_ego_pose = {
             "latitude": self.image_ego_pose_dict[image_name_new][0],
@@ -866,7 +866,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
             "attitude.z": self.image_ego_pose_dict[image_name_new][8],
             "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
-            "osm_file_name": '',
+            "osm_file_name": osm_file_name,
         }
 
         # 获取local map
@@ -877,6 +877,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         for n, elem in enumerate(linestring_inregion_src):  #提取所有车道线id和点集（无重复）
             if elem.id not in local_map_total_line_id:
                 laneline_points_utm = []
+                laneline_clss = ''
                 if 'roadside' in elem.attributes.keys():
                     if elem.attributes['roadside'] == 'true':
                         laneline_clss = 'roadside'
@@ -895,7 +896,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     laneline_points_utm_in=laneline_points_utm,
                     utm_x=utm_x,
                     utm_y=utm_y,
-                    att_z=utm_z,
+                    att_z=self.image_ego_pose_dict[image_name_new][8],
                     label_image_wh=self.label_image_wh,
                     label_range=self.label_range,
                     label_image_self_car_uv=self.label_image_self_car_uv)
