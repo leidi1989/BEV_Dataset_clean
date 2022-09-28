@@ -12,16 +12,16 @@ Scp_to_train_server: False
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/relabel_raw_data_20220926/dftc_yangsigang_wuda_hq1_6v_000304050607_100_40_40_40_20220607
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/relabel_raw_data_20220926/dftc_yangsigang_wuda_hq1_6v_000304050607_100_40_40_40_20220607_20220926
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901_map_20220926
 # 重命名前缀
-File_prefix: dftc2yangsigang2wuda
+File_prefix: changchunmap
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
 # 输入数据集类型:
-# CVAT_IMAGE_BEV_1, CVAT_IMAGE_BEV_2, CVAT_IMAGE_BEV_2_1(sync_data xml_128), CVAT_IMAGE_BEV_3_MAP, CVAT_IMAGE_1_1_MAP, CVAT_IMAGE_BEV_NAS, TEMP_DATASET
+# CVAT_IMAGE_BEV_1, CVAT_IMAGE_BEV_2, CVAT_IMAGE_BEV_3(sync_data xml_128), CVAT_IMAGE_BEV_3_MAP, CVAT_IMAGE_1_1_MAP, CVAT_IMAGE_BEV_NAS, TEMP_DATASET
 # CVAT_COCO2017, YUNCE_SEGMENT_COCO, YUNCE_SEGMENT_COCO_ONE_IMAGE, HUAWEIYUN_SEGMENT, HY_VAL,
 # SJT, MYXB, HY_HIGHWAY, GEELY_COCO_ONE_IMAGE
 # YOLO, COCO2017, BDD100K, TT100K, CCTSDB, LISA, KITTI, APOLLOSCAPE_LANE_SEGMENT,
@@ -55,7 +55,8 @@ Only_local_map: True
 # 是否删除无地图样本
 Delete_no_map: True
 # lat_lon_origin城市
-Lat_lon_origin_city: wuhan
+# Lat_lon_origin_city: wuhan
+Lat_lon_origin_city: changchun
 # 地图原点
 Lat_lon_origin_point:
   wuhan:
@@ -64,7 +65,7 @@ Lat_lon_origin_point:
   shenzhen:
     lat: 22.6860589
     lon: 114.3779897
-  changchun':
+  changchun:
     lat: 43.8285543
     lon: 125.1564909
   suzhou:
@@ -73,6 +74,8 @@ Lat_lon_origin_point:
 # laneline曲率限制
 Curvature_limit:
 
+# 标注时标注图片与相机图片是否已经拼接在一起
+Camera_label_image_concat: True
 # 相机图片宽和高
 Camera_image_wh: 3200,1200
 # 标注图片宽和高

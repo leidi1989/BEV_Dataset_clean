@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 19:50:01
+LastEditTime: 2022-09-28 14:25:36
 '''
 import shutil
 import multiprocessing
@@ -621,5 +621,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     dataset_instance.target_dataset_annotations_folder,
                     annotations_output_folder)
                 shutil.copy(annotations_input_path, annotations_output_path)
+        
+        print('Start copy annotations:')
 
         return

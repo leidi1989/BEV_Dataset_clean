@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-26 19:01:14
+LastEditTime: 2022-09-28 14:35:31
 '''
 import multiprocessing
 import shutil
@@ -19,7 +19,7 @@ from utils.utils import *
 import dataset
 
 
-class CVAT_IMAGE_BEV_2_1(Dataset_Base):
+class CVAT_IMAGE_BEV_3(Dataset_Base):
     """CVAT平台使用拆分camera和点云bev标注方法
 
     Args:
@@ -112,7 +112,6 @@ class CVAT_IMAGE_BEV_2_1(Dataset_Base):
                             self.source_dataset_annotations_folder,
                             n + '_' + m)
                         shutil.copy(annotation_path, temp_annotation_path)
-        self.camera_image_wh = [0, 0]
         print('Copy images and annotations end.')
 
         return
@@ -911,11 +910,11 @@ class CVAT_IMAGE_BEV_2_1(Dataset_Base):
         print('\nStart build target dataset folder:')
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CVAT_IMAGE_BEV_2_1'))
+                         'CVAT_IMAGE_BEV_3'))
         shutil.rmtree(output_root)
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
-                         'CVAT_IMAGE_BEV_2_1'))
+                         'CVAT_IMAGE_BEV_3'))
         annotations_output_folder = check_output_path(
             os.path.join(output_root, 'annotations'))
 

@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-25 20:06:31
+LastEditTime: 2022-09-28 15:25:37
 '''
 import multiprocessing
 import shutil
@@ -112,9 +112,13 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         """
 
         annotation_count = 0
-        for n in os.listdir(self.dataset_input_folder):
-            if n == 'annotations.xml':
-                annotation_count += 1
+        xml_root = os.path.join(self.dataset_input_folder, 'xml')
+        for n in os.listdir(xml_root):
+            pitch_xml = os.path.join(self.dataset_input_folder, 'xml', n)
+            if os.path.isdir(pitch_xml):
+                for m in os.listdir(pitch_xml):
+                    if m == 'annotations.xml':
+                        annotation_count += 1
 
         return annotation_count
 
@@ -287,14 +291,17 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     pool.join()
             pbar.close()
 
-        for n in tqdm(os.listdir(self.dataset_input_folder),
-                      desc='Copy annotations'):
-            if n == 'annotations.xml':
-                annotation_path = os.path.join(self.dataset_input_folder, n)
-                temp_annotation_path = os.path.join(
-                    self.source_dataset_annotations_folder,
-                    self.file_prefix + n)
-                shutil.copy(annotation_path, temp_annotation_path)
+        xml_root = os.path.join(self.dataset_input_folder, 'xml')
+        for n in os.listdir(xml_root):
+            pitch_xml = os.path.join(self.dataset_input_folder, 'xml', n)
+            if os.path.isdir(pitch_xml):
+                for m in os.listdir(pitch_xml):
+                    if m == 'annotations.xml':
+                        annotation_path = os.path.join(pitch_xml, m)
+                        temp_annotation_path = os.path.join(
+                            self.source_dataset_annotations_folder,
+                            n + '_' + m)
+                        shutil.copy(annotation_path, temp_annotation_path)
 
         map_osm_folder = os.path.join(self.dataset_input_folder, 'osm')
         for n in tqdm(os.listdir(map_osm_folder), desc='Copy maps'):
@@ -428,9 +435,47 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         temp_file_name_list = []
         total_source_dataset_annotations_list = os.listdir(
             self.source_dataset_annotations_folder)
-        for source_annotation_name in tqdm(
-                total_source_dataset_annotations_list,
-                desc='Total annotations'):
+        if not self.only_local_map:
+            for source_annotation_name in tqdm(
+                    total_source_dataset_annotations_list,
+                    desc='Total annotations'):
+                process_temp_file_name_list = multiprocessing.Manager().list()
+                process_output = multiprocessing.Manager().dict({
+                    'success_count':
+                    0,
+                    'fail_count':
+                    0,
+                    'no_object':
+                    0,
+                    'temp_file_name_list':
+                    process_temp_file_name_list
+                })
+                pool = multiprocessing.Pool(self.workers)
+                source_annotations_path = os.path.join(
+                    self.source_dataset_annotations_folder,
+                    source_annotation_name)
+                tree = ET.parse(source_annotations_path)
+                root = tree.getroot()
+                pbar, update = multiprocessing_list_tqdm(root,
+                                                         desc='Total images',
+                                                         leave=False)
+                for annotation in root:
+                    if annotation.tag != 'image':
+                        continue
+                    pool.apply_async(func=self.load_image_annotation_map,
+                                     args=(annotation, process_output),
+                                     callback=update,
+                                     error_callback=err_call_back)
+                pool.close()
+                pool.join()
+                pbar.close()
+
+                # debug
+                # for annotation in tqdm(root, desc='Total images', leave=False):
+                #     if annotation.tag != 'image':
+                #         continue
+                #     self.load_image_annotation(annotation, process_output)
+        else:
             process_temp_file_name_list = multiprocessing.Manager().list()
             process_output = multiprocessing.Manager().dict({
                 'success_count':
@@ -442,30 +487,25 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 'temp_file_name_list':
                 process_temp_file_name_list
             })
-            pool = multiprocessing.Pool(self.workers)
-            source_annotations_path = os.path.join(
-                self.source_dataset_annotations_folder, source_annotation_name)
-            tree = ET.parse(source_annotations_path)
-            root = tree.getroot()
-            pbar, update = multiprocessing_list_tqdm(root,
-                                                     desc='Total images',
-                                                     leave=False)
-            for annotation in root:
-                if annotation.tag != 'image':
-                    continue
-                pool.apply_async(func=self.load_image_annotation,
-                                 args=(annotation, process_output),
-                                 callback=update,
-                                 error_callback=err_call_back)
-            pool.close()
-            pool.join()
-            pbar.close()
+            # pool = multiprocessing.Pool(self.workers)
+            # pbar, update = multiprocessing_list_tqdm(os.listdir(
+            #     self.temp_images_folder),
+            #                                          desc='Total images',
+            #                                          leave=False)
+            # for image_name in os.listdir(self.temp_images_folder):
+            #     pool.apply_async(func=self.load_image_map,
+            #                      args=(image_name, process_output),
+            #                      callback=update,
+            #                      error_callback=err_call_back)
+            # pool.close()
+            # pool.join()
+            # pbar.close()
 
             # debug
-            # for annotation in tqdm(root, desc='Total images', leave=False):
-            #     if annotation.tag != 'image':
-            #         continue
-            #     self.load_image_annotation(annotation, process_output)
+            for image_name_new in tqdm(os.listdir(self.temp_images_folder),
+                                       desc='Total images',
+                                       leave=True):
+                self.load_image_map(image_name_new, process_output)
 
             success_count += process_output['success_count']
             fail_count += process_output['fail_count']
@@ -484,22 +524,20 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
         return
 
-    def load_image_annotation(self, annotation, process_output: dict) -> None:
+    def load_image_annotation_map(self, annotation,
+                                  process_output: dict) -> None:
         """将源标注转换为暂存标注
 
         Args:
             source_annotation_name (str): 源标注文件名称
             process_output (dict): 进程间通信字典
         """
-        # image_name = str(annotation.attrib['name']).split(
-        #     '.')[0] + '.' + self.temp_image_form
 
         image_name = str(annotation.attrib['name']).split(
             os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
         image_name_new = self.file_prefix + image_name
-        image_path = os.path.join(self.temp_images_folder, image_name_new)
-
         image_time_stamp = self.image_time_stamp_dict[image_name_new]
+        image_path = os.path.join(self.temp_images_folder, image_name_new)
         channels = 0
         if not self.only_statistic:
             if not os.path.exists(image_path):
@@ -515,80 +553,95 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         else:
             channels = 3
         width = int(annotation.attrib['width'])
-        height = int(annotation.attrib['height'])
-
-        # get object annotation
+        if not self.camera_label_image_concat:
+            height = int(annotation.attrib['height'])
+        else:
+            height = int(
+                int(annotation.attrib['height']) - self.camera_image_wh[1])
         object_list = []
-        if not self.only_local_map:
-            annotation_children_node = annotation.getchildren()
-            # get object box head orin
-            head_points_dict = {}
-            for obj in annotation_children_node:
-                if obj.tag != 'points':  # 只处理points标签
+        annotation_children_node = annotation.getchildren()
+        # get object box head orin
+        head_points_dict = {}
+        for obj in annotation_children_node:
+            if obj.tag != 'points':  # 只处理points标签
+                continue
+            obj_children_node = obj.getchildren()
+            if obj_children_node[0].text is None:
+                continue
+            head_point_id = ''.join(
+                list(filter(str.isnumeric, obj_children_node[0].text)))
+            point_list = list(map(float, obj.attrib['points'].split(',')))
+            head_points_dict.update({head_point_id: point_list})
+        # get object information
+        for n, obj in enumerate(annotation_children_node):
+            if obj.tag != 'box':  # 只处理box标签
+                continue
+            # if 'group_id' not in obj.attrib:
+            #     continue
+            obj_children_node = obj.getchildren()
+            for one_obj_children_node in obj_children_node:
+                if one_obj_children_node.attrib['name'] == 'visibility':
                     continue
-                obj_children_node = obj.getchildren()
-                if obj_children_node[0].text is None:
-                    continue
-                head_point_id = ''.join(
-                    list(filter(str.isnumeric, obj_children_node[0].text)))
-                point_list = list(map(float, obj.attrib['points'].split(',')))
-                head_points_dict.update({head_point_id: point_list})
-            # get object information
-            for n, obj in enumerate(annotation_children_node):
-                if obj.tag != 'box':  # 只处理box标签
-                    continue
-                # if 'group_id' not in obj.attrib:
-                #     continue
-                obj_children_node = obj.getchildren()
-                for one_obj_children_node in obj_children_node:
-                    if one_obj_children_node.attrib['name'] == 'visibility':
-                        continue
-                    if one_obj_children_node.text is None:
-                        object_head_point_id = None
-                        clss = obj.attrib['label']
-                    else:
-                        object_head_point_id = ''.join(
-                            list(
-                                filter(str.isnumeric,
-                                       one_obj_children_node.text)))
-                        clss = ''.join(
-                            list(
-                                filter(str.isalpha,
-                                       one_obj_children_node.text)))
-                clss = clss.replace(' ', '').lower()
-                if clss not in self.total_task_source_class_list:
-                    continue
-                box_xywh = [
-                    int(float(obj.attrib['xtl'])),
-                    int(float(obj.attrib['ytl'])),
-                    int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
-                    int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
-                ]
+                if one_obj_children_node.text is None:
+                    object_head_point_id = None
+                    clss = obj.attrib['label']
+                else:
+                    object_head_point_id = ''.join(
+                        list(filter(str.isnumeric,
+                                    one_obj_children_node.text)))
+                    clss = ''.join(
+                        list(filter(str.isalpha, one_obj_children_node.text)))
+            clss = clss.replace(' ', '').lower()
+            if clss not in self.total_task_source_class_list:
+                continue
+            box_xywh = []
+            x = int(float(obj.attrib['xtl']))
+            if not self.camera_label_image_concat:
+                y = int(float(obj.attrib['ytl']))
+                w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
+                h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+                box_xywh = [x, y, w, h]
                 box_xtlytlxbrybr = [
                     float(obj.attrib['xtl']),
                     float(obj.attrib['ytl']),
                     float(obj.attrib['xbr']),
                     float(obj.attrib['ybr'])
                 ]
-                if 'rotation' in obj.attrib:
-                    box_rotation = float(obj.attrib['rotation'])
-                else:
-                    box_rotation = 0
-                # get head orientation
-                if object_head_point_id is not None and object_head_point_id in head_points_dict:
+            else:
+                y = int(float(obj.attrib['ytl']) - self.camera_image_wh[1])
+                w = int(float(obj.attrib['xbr']) - float(obj.attrib['xtl']))
+                h = int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
+                box_xywh = [x, y, w, h]
+                box_xtlytlxbrybr = [
+                    float(obj.attrib['xtl']),
+                    float(obj.attrib['ytl']) - self.camera_image_wh[1],
+                    float(obj.attrib['xbr']),
+                    float(obj.attrib['ybr']) - self.camera_image_wh[1]
+                ]
+            if 'rotation' in obj.attrib:
+                box_rotation = float(obj.attrib['rotation'])
+            else:
+                box_rotation = 0
+            # get head orientation
+            if object_head_point_id is not None and object_head_point_id in head_points_dict:
+                if not self.camera_label_image_concat:
                     box_head_point = head_points_dict[object_head_point_id]
                 else:
-                    box_head_point = None
-                object_list.append(
-                    OBJECT(n,
-                           clss,
-                           box_clss=clss,
-                           box_xywh=box_xywh,
-                           box_xtlytlxbrybr=box_xtlytlxbrybr,
-                           box_rotation=box_rotation +
-                           self.label_object_rotation_angle,
-                           box_head_point=box_head_point,
-                           need_convert=self.need_convert))
+                    box_head_point = head_points_dict[object_head_point_id]
+                    box_head_point[
+                        1] = box_head_point[1] - self.camera_image_wh[1]
+            else:
+                box_head_point = None
+            object_list.append(
+                OBJECT(n,
+                       clss,
+                       box_clss=clss,
+                       box_xywh=box_xywh,
+                       box_xtlytlxbrybr=box_xtlytlxbrybr,
+                       box_rotation=box_rotation +
+                       self.label_object_rotation_angle,
+                       box_head_point=box_head_point,
+                       need_convert=self.need_convert))
 
         # local map
         image_ego_pose = None
@@ -623,15 +676,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                                     [4])) == 0:
                             osm_file_name = temp_osm_name
                             break
-            if self.only_local_map:
-                if self.delete_no_map and osm_file_name == '':
-                    print('{} no map, has been delete.'.format(image_name_new))
-                    if not self.only_statistic:
-                        os.remove(image_path)
-                    process_output['no_object'] += 1
-                    process_output['fail_count'] += 1
-
-                    return
 
             # image_ego_pose
             lat, lon, el = float(
@@ -726,229 +770,169 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
         return
 
-    # def load_image_annotation(self, annotation, process_output: dict) -> None:
-    #     """将源标注转换为暂存标注
+    def load_image_map(self, image_name_new, process_output: dict) -> None:
+        """将源标注转换为暂存标注
 
-    #     Args:
-    #         source_annotation_name (str): 源标注文件名称
-    #         process_output (dict): 进程间通信字典
-    #     """
-    #     # image_name = str(annotation.attrib['name']).split(
-    #     #     '.')[0] + '.' + self.temp_image_form
-    #     self.lanelet_layers = self.get_lanelet_layers()
-    #     image_name = str(annotation.attrib['name']).split(
-    #         os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
-    #     image_name_new = self.file_prefix + image_name
-    #     image_path = os.path.join(self.temp_images_folder, image_name_new)
+        Args:
+            source_annotation_name (str): 源标注文件名称
+            process_output (dict): 进程间通信字典
+        """
 
-    #     image_time_stamp = self.image_time_stamp_dict[image_name_new]
-    #     channels = 0
-    #     if not self.only_statistic:
-    #         if not os.path.exists(image_path):
-    #             print('\n {} not exist.'.format(image_name_new))
-    #             process_output['fail_count'] += 1
-    #             return
-    #         img = cv2.imread(image_path)
-    #         if img is None:
-    #             print('Can not load: {}'.format(image_name_new))
-    #             process_output['fail_count'] += 1
-    #             return
-    #         channels = img.shape[-1]
-    #     else:
-    #         channels = 3
-    #     width = int(annotation.attrib['width'])
-    #     height = int(annotation.attrib['height'])
-    #     object_list = []
-    #     annotation_children_node = annotation.getchildren()
-    #     # get object box head orin
-    #     head_points_dict = {}
-    #     for obj in annotation_children_node:
-    #         if obj.tag != 'points':  # 只处理points标签
-    #             continue
-    #         obj_children_node = obj.getchildren()
-    #         if obj_children_node[0].text is None:
-    #             continue
-    #         head_point_id = ''.join(
-    #             list(filter(str.isnumeric, obj_children_node[0].text)))
-    #         point_list = list(map(float, obj.attrib['points'].split(',')))
-    #         head_points_dict.update({head_point_id: point_list})
-    #     # get object information
-    #     for n, obj in enumerate(annotation_children_node):
-    #         if obj.tag != 'box':  # 只处理box标签
-    #             continue
-    #         # if 'group_id' not in obj.attrib:
-    #         #     continue
-    #         obj_children_node = obj.getchildren()
-    #         for one_obj_children_node in obj_children_node:
-    #             if one_obj_children_node.attrib['name'] == 'visibility':
-    #                 continue
-    #             if one_obj_children_node.text is None:
-    #                 object_head_point_id = None
-    #                 clss = obj.attrib['label']
-    #             else:
-    #                 object_head_point_id = ''.join(
-    #                     list(filter(str.isnumeric,
-    #                                 one_obj_children_node.text)))
-    #                 clss = ''.join(
-    #                     list(filter(str.isalpha, one_obj_children_node.text)))
-    #         clss = clss.replace(' ', '').lower()
-    #         if clss not in self.total_task_source_class_list:
-    #             continue
-    #         box_xywh = [
-    #             int(float(obj.attrib['xtl'])),
-    #             int(float(obj.attrib['ytl'])),
-    #             int(float(obj.attrib['xbr']) - float(obj.attrib['xtl'])),
-    #             int(float(obj.attrib['ybr']) - float(obj.attrib['ytl']))
-    #         ]
-    #         box_xtlytlxbrybr = [
-    #             float(obj.attrib['xtl']),
-    #             float(obj.attrib['ytl']),
-    #             float(obj.attrib['xbr']),
-    #             float(obj.attrib['ybr'])
-    #         ]
-    #         if 'rotation' in obj.attrib:
-    #             box_rotation = float(obj.attrib['rotation'])
-    #         else:
-    #             box_rotation = 0
-    #         # get head orientation
-    #         if object_head_point_id is not None and object_head_point_id in head_points_dict:
-    #             box_head_point = head_points_dict[object_head_point_id]
-    #         else:
-    #             box_head_point = None
-    #         object_list.append(
-    #             OBJECT(n,
-    #                    clss,
-    #                    box_clss=clss,
-    #                    box_xywh=box_xywh,
-    #                    box_xtlytlxbrybr=box_xtlytlxbrybr,
-    #                    box_rotation=box_rotation +
-    #                    self.label_object_rotation_angle,
-    #                    box_head_point=box_head_point,
-    #                    need_convert=self.need_convert))
+        image_path = os.path.join(self.temp_images_folder, image_name_new)
+        annotation_image_path = os.path.join(
+            self.source_dataset_annotation_image_folder, image_name_new)
+        image_time_stamp = self.image_time_stamp_dict[image_name_new]
+        channels = 0
+        if not os.path.exists(annotation_image_path):
+            print('\n {} not exist.'.format(image_name_new))
+            process_output['fail_count'] += 1
+            return
+        img = cv2.imread(annotation_image_path)
+        if img is None:
+            print('Can not load: {}'.format(image_name_new))
+            process_output['fail_count'] += 1
+            return
+        channels = img.shape[-1]
+        width = int(img.shape[1])
+        if not self.camera_label_image_concat:
+            height = int(img.shape[0] + self.camera_image_wh[1])
+        else:
+            height = int(img.shape[0])
 
-    #     # local map
-    #     image_ego_pose = None
-    #     laneline_list = None
-    #     if self.get_local_map:
-    #         # osm name
-    #         osm_file_name = ''
-    #         local_map_vision_box = lanelet2.core.BoundingBox2d(
-    #             lanelet2.core.BasicPoint2d(
-    #                 self.image_ego_pose_dict[image_name_new][3] -
-    #                 self.utm_offset,
-    #                 self.image_ego_pose_dict[image_name_new][4] -
-    #                 self.utm_offset),
-    #             lanelet2.core.BasicPoint2d(
-    #                 self.image_ego_pose_dict[image_name_new][3] +
-    #                 self.utm_offset,
-    #                 self.image_ego_pose_dict[image_name_new][4] +
-    #                 self.utm_offset))
-    #         for temp_osm_name, lanelet_layer in (self.lanelet_layers).items():
-    #             lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
-    #             if len(lanelets_inRegion):
-    #                 for elem in lanelets_inRegion:
-    #                     if lanelet2.geometry.distance(
-    #                             elem,
-    #                             lanelet2.core.BasicPoint2d(
-    #                                 self.image_ego_pose_dict[image_name_new]
-    #                                 [3],
-    #                                 self.image_ego_pose_dict[image_name_new]
-    #                                 [4])) == 0:
-    #                         osm_file_name = temp_osm_name
-    #                         break
+        # get object annotation
+        object_list = []
 
-    #         if self.delete_no_map and osm_file_name == '':
-    #             # print('{} no map, has been delete.'.format(image_name_new))
-    #             # if not self.only_statistic:
-    #             #     os.remove(image_path)
-    #             # process_output['no_object'] += 1
-    #             # process_output['fail_count'] += 1
-    #             return
+        # local map
+        image_ego_pose = None
+        laneline_list = None
+        origin_utm = self.get_utm_origin()
+        # lanelet_layers = self.get_lanelet_layers()
+        lanelet_linestringlayer = self.get_lanelet_linestringlayer()
+        # osm name
+        osm_file_name = ''
+        local_map_vision_box = lanelet2.core.BoundingBox2d(
+            lanelet2.core.BasicPoint2d(
+                self.image_ego_pose_dict[image_name_new][3] - self.utm_offset,
+                self.image_ego_pose_dict[image_name_new][4] - self.utm_offset),
+            lanelet2.core.BasicPoint2d(
+                self.image_ego_pose_dict[image_name_new][3] + self.utm_offset,
+                self.image_ego_pose_dict[image_name_new][4] + self.utm_offset))
+        for temp_osm_name, lanelet_layer in (lanelet_layers).items():
+            lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+            if len(lanelets_inRegion):
+                for elem in lanelets_inRegion:
+                    if lanelet2.geometry.distance(
+                            elem,
+                            lanelet2.core.BasicPoint2d(
+                                self.image_ego_pose_dict[image_name_new][3],
+                                self.image_ego_pose_dict[image_name_new]
+                                [4])) == 0:
+                        osm_file_name = temp_osm_name
+                        break
+        # for temp_osm_name, lanelet_layer in (lanelet_linestringlayer).items():
+        #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+        #     if len(lanelets_inRegion):
+        #         for elem in lanelets_inRegion:
+        #             if lanelet2.geometry.distance(
+        #                     elem,
+        #                     lanelet2.core.BasicPoint2d(
+        #                         self.image_ego_pose_dict[image_name_new][3],
+        #                         self.image_ego_pose_dict[image_name_new]
+        #                         [4])) == 0:
+        #                 osm_file_name = temp_osm_name
+        #                 break
+        if osm_file_name == '':
+            return
+        # image_ego_pose
+        lat, lon, el = float(
+            self.image_ego_pose_dict[image_name_new][0]), float(
+                self.image_ego_pose_dict[image_name_new][1]), float(
+                    self.image_ego_pose_dict[image_name_new][2])
+        utm_xy = utm.from_latlon(lat, lon, origin_utm["zone_number"],
+                                 origin_utm["zone_letter"])
+        utm_x, utm_y = utm_xy[0] - origin_utm["origin_x"], utm_xy[
+            1] - origin_utm["origin_y"]
+        utm_z = el
+        image_ego_pose = {
+            "latitude": self.image_ego_pose_dict[image_name_new][0],
+            "longitude": self.image_ego_pose_dict[image_name_new][1],
+            "elevation": self.image_ego_pose_dict[image_name_new][2],
+            "utm_position.x": utm_x,
+            "utm_position.y": utm_y,
+            "utm_position.z": utm_z,
+            "attitude.x": self.image_ego_pose_dict[image_name_new][6],
+            "attitude.y": self.image_ego_pose_dict[image_name_new][7],
+            "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+            "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
+            "osm_file_name": osm_file_name,
+        }
 
-    #         # image_ego_pose
-    #         image_ego_pose = {
-    #             "latitude": self.image_ego_pose_dict[image_name_new][0],
-    #             "longitude": self.image_ego_pose_dict[image_name_new][1],
-    #             "elevation": self.image_ego_pose_dict[image_name_new][2],
-    #             "utm_position.x": self.image_ego_pose_dict[image_name_new][3],
-    #             "utm_position.y": self.image_ego_pose_dict[image_name_new][4],
-    #             "utm_position.z": self.image_ego_pose_dict[image_name_new][5],
-    #             "attitude.x": self.image_ego_pose_dict[image_name_new][6],
-    #             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
-    #             "attitude.z": self.image_ego_pose_dict[image_name_new][8],
-    #             "position_type":
-    #             int(self.image_ego_pose_dict[image_name_new][9]),
-    #             "osm_file_name": osm_file_name,
-    #         }
+        # 获取local map
+        laneline_list = []
+        linestring_inregion_src = lanelet_linestringlayer[
+            osm_file_name].search(local_map_vision_box)
+        local_map_total_line_id = []
+        for n, elem in enumerate(linestring_inregion_src):  #提取所有车道线id和点集（无重复）
+            if elem.id not in local_map_total_line_id:
+                laneline_points_utm = []
+                if 'roadside' in elem.attributes.keys():
+                    if elem.attributes['roadside'] == 'true':
+                        laneline_clss = 'roadside'
+                    elif elem.attributes['roadside'] == 'false':
+                        laneline_clss = 'line'
+                    for point in elem:
+                        laneline_points_utm.append([point.x, point.y])
+                    # elif 'vguideline' in elem.attributes.keys():
+                    #     pass
+                if laneline_clss not in self.task_dict['Laneline'][
+                        'Source_dataset_class']:
+                    continue
+                temp_laneline = LANELINE(
+                    laneline_id_in=n,
+                    laneline_clss_in=laneline_clss,
+                    laneline_points_utm_in=laneline_points_utm,
+                    utm_x=self.image_ego_pose_dict[image_name_new][3],
+                    utm_y=self.image_ego_pose_dict[image_name_new][4],
+                    att_z=self.image_ego_pose_dict[image_name_new][8],
+                    label_image_wh=self.label_image_wh,
+                    label_range=self.label_range,
+                    label_image_self_car_uv=self.label_image_self_car_uv)
+                if 0 == len(temp_laneline.laneline_points_label_image):
+                    continue
+                laneline_list.append(temp_laneline)
+                local_map_total_line_id.append(elem.id)
 
-    #         # 获取local map
-    #         laneline_list = []
-    #         linestring_inregion_src = self.lanelet_linestringlayer[
-    #             osm_file_name].search(local_map_vision_box)
-    #         local_map_total_line_id = []
-    #         for n, elem in enumerate(
-    #                 linestring_inregion_src):  #提取所有车道线id和点集（无重复）
-    #             if elem.id not in local_map_total_line_id:
-    #                 laneline_points_utm = []
-    #                 if 'roadside' in elem.attributes.keys():
-    #                     if elem.attributes['roadside'] == 'true':
-    #                         laneline_clss = 'roadside'
-    #                     elif elem.attributes['roadside'] == 'false':
-    #                         laneline_clss = 'line'
-    #                     for point in elem:
-    #                         laneline_points_utm.append([point.x, point.y])
-    #                     # elif 'vguideline' in elem.attributes.keys():
-    #                     #     pass
-    #                 if laneline_clss not in self.task_dict['Laneline'][
-    #                         'Source_dataset_class']:
-    #                     continue
-    #                 temp_laneline = LANELINE(
-    #                     laneline_id_in=n,
-    #                     laneline_clss_in=laneline_clss,
-    #                     laneline_points_utm_in=laneline_points_utm,
-    #                     utm_x=self.image_ego_pose_dict[image_name_new][3],
-    #                     utm_y=self.image_ego_pose_dict[image_name_new][4],
-    #                     att_z=self.image_ego_pose_dict[image_name_new][8],
-    #                     label_image_wh=self.label_image_wh,
-    #                     label_range=self.label_range,
-    #                     label_image_self_car_uv=self.
-    #                     label_image_self_car_uv)
-    #                 if 0 == len(temp_laneline.laneline_points_label_image):
-    #                     continue
-    #                 laneline_list.append(temp_laneline)
-    #                 local_map_total_line_id.append(elem.id)
+        image = IMAGE(image_name_new, image_name_new, image_path, height,
+                      width, channels, object_list, image_ego_pose,
+                      image_time_stamp, laneline_list)
+        # 读取目标标注信息，输出读取的source annotation至temp annotation
+        if image is None:
+            process_output['fail_count'] += 1
+            return
+        temp_annotation_output_path = os.path.join(
+            self.temp_annotations_folder,
+            image.file_name_new + '.' + self.temp_annotation_form)
+        image.object_class_modify(self)
+        image.laneline_class_modify(self)
+        image.object_pixel_limit(self)
+        # image.laneline_curvature_limit(self)
+        if 0 == len(image.laneline_list) and self.delete_no_map:
+            print('{} no aneline, has been delete.'.format(
+                image.image_name_new))
+            if not self.only_statistic:
+                os.remove(image.image_path)
+            process_output['no_object'] += 1
+            process_output['fail_count'] += 1
+            return
+        if image.output_temp_annotation(temp_annotation_output_path):
+            process_output['temp_file_name_list'].append(image.file_name_new)
+            process_output['success_count'] += 1
+        else:
+            print('errow output temp annotation: {}'.format(
+                image.file_name_new))
+            process_output['fail_count'] += 1
 
-    #     image = IMAGE(image_name, image_name_new, image_path, height, width,
-    #                   channels, object_list, image_ego_pose, image_time_stamp,
-    #                   laneline_list)
-    #     # 读取目标标注信息，输出读取的source annotation至temp annotation
-    #     if image is None:
-    #         process_output['fail_count'] += 1
-    #         return
-    #     temp_annotation_output_path = os.path.join(
-    #         self.temp_annotations_folder,
-    #         image.file_name_new + '.' + self.temp_annotation_form)
-    #     image.object_class_modify(self)
-    #     image.laneline_class_modify(self)
-    #     image.object_pixel_limit(self)
-    #     # image.laneline_curvature_limit(self)
-    #     # if 0 == len(image.object_list) and not self.keep_no_object:
-    #     #     print('{} no object, has been delete.'.format(
-    #     #         image.image_name_new))
-    #     #     if not self.only_statistic:
-    #     #         os.remove(image.image_path)
-    #     #     process_output['no_object'] += 1
-    #     #     process_output['fail_count'] += 1
-    #     #     return
-    #     if image.output_temp_annotation(temp_annotation_output_path):
-    #         process_output['temp_file_name_list'].append(image.file_name_new)
-    #         process_output['success_count'] += 1
-    #     else:
-    #         print('errow output temp annotation: {}'.format(
-    #             image.file_name_new))
-    #         process_output['fail_count'] += 1
-
-    #     return
+        return
 
     @staticmethod
     def target_dataset(dataset_instance: Dataset_Base) -> None:

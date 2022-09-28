@@ -4,13 +4,13 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:07:13
 LastEditors: Leidi
-LastEditTime: 2022-09-19 19:23:56
+LastEditTime: 2022-09-28 14:28:10
 '''
 from .cvat_coco2017 import CVAT_COCO2017
 from .cvat_image_1_1 import CVAT_IMAGE_1_1
 from .cvat_image_bev_1 import CVAT_IMAGE_BEV_1
 from .cvat_image_bev_2 import CVAT_IMAGE_BEV_2
-from .cvat_image_bev_2_1 import CVAT_IMAGE_BEV_2_1
+from .cvat_image_bev_3 import CVAT_IMAGE_BEV_3
 from .cvat_image_bev_3_map import CVAT_IMAGE_BEV_3_MAP
 from .cvat_image_bev_group import CVAT_IMAGE_BEV_GROUP
 from .cvat_image_bev_nas import CVAT_IMAGE_BEV_NAS

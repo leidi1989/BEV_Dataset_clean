@@ -12,21 +12,21 @@ Scp_to_train_server: False
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/dongfenggaojia_hq1_6v_000304050607_100_40_40_40_20220524
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/dongfenggaojia_hq1_6v_000304050607_100_40_40_40_20220524_20220927
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchun_hq1_6v_000304050607_100_80_40_40_20220901_20220927
 # 重命名前缀
-File_prefix: dongfenggaojia
+File_prefix: changchun
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
 # 输入数据集类型:
-# CVAT_IMAGE_BEV_1, CVAT_IMAGE_BEV_2, CVAT_IMAGE_BEV_2_1(sync_data xml_128), CVAT_IMAGE_BEV_3_MAP, CVAT_IMAGE_1_1_MAP, CVAT_IMAGE_BEV_NAS, TEMP_DATASET
+# CVAT_IMAGE_BEV_1, CVAT_IMAGE_BEV_2, CVAT_IMAGE_BEV_3(sync_data xml_128), CVAT_IMAGE_BEV_3_MAP, CVAT_IMAGE_1_1_MAP, CVAT_IMAGE_BEV_NAS, TEMP_DATASET
 # CVAT_COCO2017, YUNCE_SEGMENT_COCO, YUNCE_SEGMENT_COCO_ONE_IMAGE, HUAWEIYUN_SEGMENT, HY_VAL,
 # SJT, MYXB, HY_HIGHWAY, GEELY_COCO_ONE_IMAGE
 # YOLO, COCO2017, BDD100K, TT100K, CCTSDB, LISA, KITTI, APOLLOSCAPE_LANE_SEGMENT,
 # TI_EDGEAILITE_AUTO_ANNOTATION
-Source_dataset_style: CVAT_IMAGE_BEV_2_1
+Source_dataset_style: CVAT_IMAGE_BEV_3
 # 目标数据集类型：
 # NUSCENES, PYVA, CVT, HY_BEV, HDMAPNET
 # COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO
@@ -78,11 +78,12 @@ Camera_label_image_concat: True
 # 相机图片宽和高
 Camera_image_wh: 3200,1200
 # 标注图片宽和高
-Label_image_wh: 3200,5600
+Label_image_wh: 3200,7200
+# 标注图片宽和高
 # Label_image_wh: 3200,5600
 # 标注范围：前后左右（米）
-# Label_range: 100,80,40,40
-Label_range: 100,40,40,40
+# Label_range: 100,40,40,40
+Label_range: 100,80,40,40
 # 调整标注范围：前后左右（米）
 Adjust_label_range: 80,40,40,40
 # 标注框旋转角度
