@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 20:44:13
+LastEditTime: 2022-09-28 20:46:29
 '''
 import multiprocessing
 import shutil
@@ -700,7 +700,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 "utm_position.z": utm_z,
                 "attitude.x": self.image_ego_pose_dict[image_name_new][6],
                 "attitude.y": self.image_ego_pose_dict[image_name_new][7],
-                "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+                "attitude.z": self.image_ego_pose_dict[image_name_new][8] +
+                self.attitude_z_offset,
                 "position_type":
                 int(self.image_ego_pose_dict[image_name_new][9]),
                 "osm_file_name": osm_file_name,
@@ -733,7 +734,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                         laneline_points_utm_in=laneline_points_utm,
                         utm_x=utm_x,
                         utm_y=utm_y,
-                        att_z=self.image_ego_pose_dict[image_name_new][8],
+                        att_z=self.image_ego_pose_dict[image_name_new][8] +
+                        self.attitude_z_offset,
                         label_image_wh=self.label_image_wh,
                         label_range=self.label_range,
                         label_image_self_car_uv=self.label_image_self_car_uv)
@@ -897,7 +899,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     laneline_points_utm_in=laneline_points_utm,
                     utm_x=utm_x,
                     utm_y=utm_y,
-                    att_z=self.image_ego_pose_dict[image_name_new][8],
+                    att_z=self.image_ego_pose_dict[image_name_new][8] +
+                    self.attitude_z_offset,
                     label_image_wh=self.label_image_wh,
                     label_range=self.label_range,
                     label_image_self_car_uv=self.label_image_self_car_uv)
