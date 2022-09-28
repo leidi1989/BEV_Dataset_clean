@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-09-28 19:58:03
+LastEditTime: 2022-09-28 20:38:16
 '''
 import argparse
 import time
@@ -31,7 +31,7 @@ def clean(dataset_config: dict) -> None:
     #     Input_dataset.get_dataset_image_mean_std()
     #     Input_dataset.check_dataset_image_mean_std()
     #     pass
-    # Input_dataset.divide_dataset()
+    Input_dataset.divide_dataset()
     # Input_dataset.sample_statistics()
 
     if not Input_dataset.only_statistic:

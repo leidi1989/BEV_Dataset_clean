@@ -12,9 +12,9 @@ Scp_to_train_server: False
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901_no_chouxi
+Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901_no_chouxi_map_20220928
+Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901_map_20220928
 # 重命名前缀
 File_prefix: changchunmap
 # name delimiter(cityscapes need: "@")
@@ -73,8 +73,6 @@ Lat_lon_origin_point:
     lon: 120.7274488
 # laneline曲率限制
 Curvature_limit:
-# attitude.z 修正偏移量
-attitude_z_offset: 2.3
 
 # 标注时标注图片与相机图片是否已经拼接在一起
 Camera_label_image_concat: True

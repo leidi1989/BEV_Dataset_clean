@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 19:56:57
+LastEditTime: 2022-09-28 20:44:13
 '''
 import multiprocessing
 import shutil
@@ -864,7 +864,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             "utm_position.z": utm_z,
             "attitude.x": self.image_ego_pose_dict[image_name_new][6],
             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
-            "attitude.z": self.image_ego_pose_dict[image_name_new][8],
+            "attitude.z": self.image_ego_pose_dict[image_name_new][8] -
+            self.attitude_z_offset,
             "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
             "osm_file_name": osm_file_name,
         }

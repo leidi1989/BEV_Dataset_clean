@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-28 19:34:49
+LastEditTime: 2022-09-28 20:43:57
 '''
 import ftplib
 import json
@@ -144,6 +144,7 @@ class Dataset_Base:
         self.delete_no_map = dataset_config['Delete_no_map']
         self.only_local_map = dataset_config['Only_local_map']
         self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
+        self.attitude_z_offset = dataset_config['attitude_z_offset']
 
         # File_prefix
         self.file_prefix_delimiter = '@' if dataset_config['File_prefix_delimiter'] == '' or \

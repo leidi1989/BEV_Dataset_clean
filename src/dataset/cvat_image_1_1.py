@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 19:40:44
+LastEditTime: 2022-09-28 20:20:17
 '''
 import shutil
 import multiprocessing
@@ -181,6 +181,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             dataset_instance.target_dataset_style].annotation_creat_root(
                 dataset_instance, class_color_encode_dict)
         # 获取全部图片标签信息列表
+        dataset_instance.temp_annotations_path_list = dataset_instance.get_temp_annotations_path_list()
         for task, task_class_dict in tqdm(dataset_instance.task_dict.items(),
                                           desc='Load each task annotation'):
             if task_class_dict is None \
