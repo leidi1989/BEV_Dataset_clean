@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 15:25:37
+LastEditTime: 2022-09-28 15:28:15
 '''
 import multiprocessing
 import shutil
@@ -806,7 +806,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         image_ego_pose = None
         laneline_list = None
         origin_utm = self.get_utm_origin()
-        # lanelet_layers = self.get_lanelet_layers()
+        lanelet_layers = self.get_lanelet_layers()
         lanelet_linestringlayer = self.get_lanelet_linestringlayer()
         # osm name
         osm_file_name = ''
