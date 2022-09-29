@@ -47,6 +47,8 @@ Keep_no_object: True
 Draw_car_mask: True
 # 是否为二分类（backgound and object）:
 Two_class: True
+# 输出为CVAT的上传数据集时，单个任务标注数量
+CVAT_task_divide: 50
 
 # 是否包含地图
 Get_local_map: False

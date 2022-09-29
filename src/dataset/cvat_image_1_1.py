@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 20:20:17
+LastEditTime: 2022-09-29 10:28:27
 '''
 import shutil
 import multiprocessing
@@ -181,9 +181,10 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             dataset_instance.target_dataset_style].annotation_creat_root(
                 dataset_instance, class_color_encode_dict)
         # 获取全部图片标签信息列表
-        dataset_instance.temp_annotations_path_list = dataset_instance.get_temp_annotations_path_list()
+        dataset_instance.temp_annotations_path_list = dataset_instance.get_temp_annotations_path_list(
+        )
         for task, task_class_dict in tqdm(dataset_instance.task_dict.items(),
-                                          desc='Load each task annotation'):
+                                        desc='Load each task annotation'):
             if task_class_dict is None \
                     or task_class_dict['Target_dataset_class'] is None:
                 continue
@@ -197,15 +198,15 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 total_image_xml.append(
                     pool.apply_async(func=dataset.__dict__[
                         dataset_instance.target_dataset_style].
-                                     annotation_get_temp,
-                                     args=(
-                                         dataset_instance,
-                                         temp_annotation_path,
-                                         task,
-                                         task_class_dict,
-                                     ),
-                                     callback=update,
-                                     error_callback=err_call_back))
+                                    annotation_get_temp,
+                                    args=(
+                                        dataset_instance,
+                                        temp_annotation_path,
+                                        task,
+                                        task_class_dict,
+                                    ),
+                                    callback=update,
+                                    error_callback=err_call_back))
             pool.close()
             pool.join()
             pbar.close()
@@ -223,8 +224,8 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 'annotatons.' +
                 dataset_instance.target_dataset_annotation_form)
             tree.write(annotation_output_path,
-                       encoding='utf-8',
-                       xml_declaration=True)
+                    encoding='utf-8',
+                    xml_declaration=True)
 
         return
 
@@ -513,14 +514,14 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         random.shuffle(root)
         root = root[0:dataset_instance.target_dataset_annotations_check_count]
         for annotation in tqdm(root,
-                            desc='Load object annotation',
-                            leave=False):
+                               desc='Load object annotation',
+                               leave=False):
             if annotation.tag != 'image':
                 continue
             image_name = str(annotation.attrib['name'])
             image_name_new = image_name
             image_path = os.path.join(dataset_instance.temp_images_folder,
-                                    image_name_new)
+                                      image_name_new)
             img = cv2.imread(image_path)
             if img is None:
                 print('Can not load: {}'.format(image_name_new))
@@ -543,10 +544,10 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                         ]
                         object_list.append(
                             OBJECT(n,
-                                clss,
-                                box_clss=clss,
-                                box_xywh=box_xywh,
-                                need_convert=dataset_instance.need_convert))
+                                   clss,
+                                   box_clss=clss,
+                                   box_xywh=box_xywh,
+                                   need_convert=dataset_instance.need_convert))
                     elif obj.tag == 'polygon':
                         clss = str(obj.attrib['label'])
                         clss = clss.replace(' ', '').lower()
@@ -558,10 +559,10 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             segment.append(list(map(int, [x, y])))
                         object_list.append(
                             OBJECT(n,
-                                clss,
-                                segmentation_clss=clss,
-                                segmentation=segment,
-                                need_convert=dataset_instance.need_convert))
+                                   clss,
+                                   segmentation_clss=clss,
+                                   segmentation=segment,
+                                   need_convert=dataset_instance.need_convert))
                     elif obj.tag == 'polyline':
                         clss = str(obj.attrib['label'])
                         clss = clss.replace(' ', '').lower()
@@ -581,13 +582,13 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                 label_range=dataset_instance.label_range,
                             ))
                 image = IMAGE(image_name,
-                            image_name,
-                            image_path,
-                            int(height),
-                            int(width),
-                            int(channels),
-                            object_list_in=object_list,
-                            laneline_list_in=laneline_list)
+                              image_name,
+                              image_path,
+                              int(height),
+                              int(width),
+                              int(channels),
+                              object_list_in=object_list,
+                              laneline_list_in=laneline_list)
                 check_images_list.append(image)
             else:
                 object_list = []
@@ -607,18 +608,17 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                 laneline_id_in=n,
                                 laneline_clss_in=clss,
                                 laneline_points_label_image_in=laneline_point,
-                                label_image_wh=dataset_instance.
-                                label_image_wh,
+                                label_image_wh=dataset_instance.label_image_wh,
                                 label_range=dataset_instance.label_range,
                             ))
                 image = IMAGE(image_name,
-                            image_name,
-                            image_path,
-                            int(height),
-                            int(width),
-                            int(channels),
-                            object_list_in=object_list,
-                            laneline_list_in=laneline_list)
+                              image_name,
+                              image_path,
+                              int(height),
+                              int(width),
+                              int(channels),
+                              object_list_in=object_list,
+                              laneline_list_in=laneline_list)
                 check_images_list.append(image)
 
         return check_images_list
@@ -642,43 +642,44 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         annotations_output_folder = check_output_path(
             os.path.join(output_root, 'annotations'))
 
-        print('Start copy images:')
-        image_list = []
-        image_output_folder = check_output_path(
-            os.path.join(output_root, 'images'))
-        with open(dataset_instance.temp_divide_file_list[0], 'r') as f:
-            for n in f.readlines():
-                image_list.append(n.replace('\n', ''))
-        pbar, update = multiprocessing_list_tqdm(image_list,
-                                                 desc='Copy images',
-                                                 leave=False)
-        pool = multiprocessing.Pool(dataset_instance.workers)
-        for image_input_path in image_list:
-            annotation_image_input_path = image_input_path.replace(
-                dataset_instance.temp_images_folder,
-                dataset_instance.source_dataset_annotation_image_folder)
-            image_output_path = image_input_path.replace(
-                dataset_instance.temp_images_folder, image_output_folder)
-            pool.apply_async(func=shutil.copy,
-                             args=(
-                                 annotation_image_input_path,
-                                 image_output_path,
-                             ),
-                             callback=update,
-                             error_callback=err_call_back)
-        pool.close()
-        pool.join()
-        pbar.close()
+        if dataset_instance.target_annotation_output_batch_size =='':
+            print('Start copy images:')
+            image_list = []
+            image_output_folder = check_output_path(
+                os.path.join(output_root, 'images', '0'))
+            with open(dataset_instance.temp_divide_file_list[0], 'r') as f:
+                for n in f.readlines():
+                    image_list.append(n.replace('\n', ''))
+            pbar, update = multiprocessing_list_tqdm(image_list,
+                                                    desc='Copy images',
+                                                    leave=False)
+            pool = multiprocessing.Pool(dataset_instance.workers)
+            for image_input_path in image_list:
+                annotation_image_input_path = image_input_path.replace(
+                    dataset_instance.temp_images_folder,
+                    dataset_instance.source_dataset_annotation_image_folder)
+                image_output_path = image_input_path.replace(
+                    dataset_instance.temp_images_folder, image_output_folder)
+                pool.apply_async(func=shutil.copy,
+                                args=(
+                                    annotation_image_input_path,
+                                    image_output_path,
+                                ),
+                                callback=update,
+                                error_callback=err_call_back)
+            pool.close()
+            pool.join()
+            pbar.close()
 
-        print('Start copy annotations:')
-        for root, dirs, files in os.walk(
-                dataset_instance.target_dataset_annotations_folder):
-            for n in tqdm(files, desc='Copy annotations'):
-                annotations_input_path = os.path.join(root, n)
-                annotations_output_path = annotations_input_path.replace(
-                    dataset_instance.target_dataset_annotations_folder,
-                    annotations_output_folder)
-                shutil.copy(annotations_input_path, annotations_output_path)
+            print('Start copy annotations:')
+            for root, dirs, files in os.walk(
+                    dataset_instance.target_dataset_annotations_folder):
+                for n in tqdm(files, desc='Copy annotations'):
+                    annotations_input_path = os.path.join(root, n)
+                    annotations_output_path = annotations_input_path.replace(
+                        dataset_instance.target_dataset_annotations_folder,
+                        annotations_output_folder)
+                    shutil.copy(annotations_input_path, annotations_output_path)
 
         print('Start copy annotations:')
 

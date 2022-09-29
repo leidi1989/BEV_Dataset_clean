@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-28 20:43:57
+LastEditTime: 2022-09-29 10:19:42
 '''
 import ftplib
 import json
@@ -292,6 +292,8 @@ class Dataset_Base:
 
         self.total_task_source_class_list = self.get_total_task_source_class_list(
         )
+        self.target_annotation_output_batch_size = dataset_config[
+            'Target_annotation_output_batch_size']
 
         # 统计设置
         self.only_statistic = dataset_config['Only_statistic']
