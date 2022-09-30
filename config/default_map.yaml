@@ -131,8 +131,8 @@ Need_convert:
 # Detection, Semantic_segmentation, Instance_segmentation, Keypoints
 Task_and_class_config:
   # Detection:
-  #   Source_dataset_class_file_path: data/class/bev/hy_bev_60_classes_20220828.name
-  #   Modify_class_file_path: data/class/bev/hy_bev_2_classes_20220828.txt
+  #   Source_dataset_class_file_path: data/class/bev/hy_bev_62_classes_2022930.name
+  #   Modify_class_file_path: data/class/bev/hy_bev_62_to_2_classes_20220828.txt
   #   Target_each_class_object_pixel_limit_file_path:
   # Semantic_segmentation:
   #   Source_dataset_class_file_path: Clean_up/data/auto_annotation/TI_edgeailite_auto_annotation_yunce_parking_6_classes.names

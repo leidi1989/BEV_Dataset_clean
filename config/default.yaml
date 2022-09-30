@@ -12,11 +12,11 @@ Scp_to_train_server: False
 Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchun_hq1_6v_000304050607_100_80_40_40_20220901
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchunhuandao_hq1_6v_000304050607_100_80_40_40_20220902
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchun_hq1_6v_000304050607_100_80_40_40_20220901_20220927
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchunhuandao_hq1_6v_000304050607_100_80_40_40_20220902_20220927
 # 重命名前缀
-File_prefix: changchun
+File_prefix: changchunhuandao
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
@@ -48,7 +48,9 @@ Draw_car_mask: True
 # 是否为二分类（backgound and object）:
 Two_class: True
 # 输出为CVAT的上传数据集时，单个任务标注数量
-CVAT_task_divide: 50
+Target_annotation_output_batch_size: 150
+# 输出为CVAT的上传数据集时，上传related images
+Related_images: True
 
 # 是否包含地图
 Get_local_map: False
@@ -74,9 +76,11 @@ Lat_lon_origin_point:
     lon: 120.7274488
 # laneline曲率限制
 Curvature_limit:
+# attitude.z 修正偏移量+（长春偏移0.065）
+attitude_z_offset: 0.065
 
 # 标注时标注图片与相机图片是否已经拼接在一起
-Camera_label_image_concat: True
+Camera_label_image_concat: False
 # 相机图片宽和高
 Camera_image_wh: 3200,1200
 # 标注图片宽和高
@@ -122,8 +126,8 @@ Need_convert:
 # Detection, Semantic_segmentation, Instance_segmentation, Keypoints
 Task_and_class_config:
   Detection:
-    Source_dataset_class_file_path: data/class/bev/hy_bev_60_classes_20220828.name
-    Modify_class_file_path: data/class/bev/hy_bev_2_classes_20220828.txt
+    Source_dataset_class_file_path: data/class/bev/hy_bev_62_classes_20220930.name
+    Modify_class_file_path: data/class/bev/hy_bev_62_to_2_classes_20220930.txt
     Target_each_class_object_pixel_limit_file_path:
   # Semantic_segmentation:
   #   Source_dataset_class_file_path: Clean_up/data/auto_annotation/TI_edgeailite_auto_annotation_yunce_parking_6_classes.names
