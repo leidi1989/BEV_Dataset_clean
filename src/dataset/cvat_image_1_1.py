@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-30 11:36:18
+LastEditTime: 2022-09-30 12:29:21
 '''
 import shutil
 import multiprocessing
@@ -818,7 +818,6 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                xml_declaration=True)
 
                     # copy annotation images
-                    print('Start copy annotation images:')
                     annotation_image_list = []
                     related_image_output_folder = check_output_path(
                         os.path.join(output_root, str(index)))
@@ -858,7 +857,6 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
                     # copy related images
                     if dataset_instance.related_images:
-                        print('Start copy related images:')
                         related_image_list = []
                         related_image_output_folder = check_output_path(
                             os.path.join(output_root, str(index),

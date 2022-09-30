@@ -52,7 +52,7 @@ Draw_car_mask: True
 # 是否为二分类（backgound and object）:
 Two_class: True
 # 输出为CVAT的上传数据集时，单个任务标注数量
-Target_annotation_output_batch_size: 
+Target_annotation_output_batch_size: 150
 # 输出为CVAT的上传数据集时，上传related images
 Related_images: True
 
