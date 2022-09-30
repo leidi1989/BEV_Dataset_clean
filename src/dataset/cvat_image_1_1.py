@@ -4,10 +4,11 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-30 10:19:51
+LastEditTime: 2022-09-30 11:36:18
 '''
 import shutil
 import multiprocessing
+from turtle import distance
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -651,10 +652,6 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
                          'cvat_image_1_1'))
-        # images_total_output_folder = check_output_path(
-        #     os.path.join(output_root, 'images'))
-        # annotations_output_folder = check_output_path(
-        #     os.path.join(output_root, 'annotations'))
 
         if dataset_instance.target_annotation_output_batch_size == None:
             print('Start copy images:')
@@ -700,11 +697,13 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             # copy related images
             if dataset_instance.related_images:
                 print('Start copy related images:')
-                related_image_list = []
                 related_image_output_folder = check_output_path(
-                    os.path.join(output_root, str(index), 'related_images'))
-                for n in temp_annotation_path_list:
-                    related_image_name = n.split(os.sep)[-1].split('.')[0]
+                    os.path.join(output_root, str(0),
+                                    'related_images'))
+                related_image_list = []
+                for n in os.listdir(dataset_instance.temp_annotations_folder):
+                    related_image_name = n.split(
+                        os.sep)[-1].split('.')[0]
                     related_image_path = os.path.join(
                         dataset_instance.temp_images_folder,
                         related_image_name + '.' +
@@ -717,18 +716,27 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 pool = multiprocessing.Pool(dataset_instance.workers)
                 for related_image_input_path in related_image_list:
                     related_image_name = related_image_input_path.split(
-                        os.sep)[-1].split(
-                            '.'
-                        )[0] + '.' + dataset_instance.target_dataset_image_form
+                        os.sep
+                    )[-1].split(
+                        '.'
+                    )[0] + '.' + dataset_instance.target_dataset_image_form
+                    related_image_second_folder = related_image_name.replace(
+                        '.', '_')
+
+                    related_image_output_total_folder = os.path.join(
+                        related_image_output_folder,
+                        related_image_second_folder)
+                    os.makedirs(related_image_output_total_folder)
                     related_image_output_path = os.path.join(
-                        related_image_output_folder, related_image_name)
+                        related_image_output_total_folder,
+                        related_image_name)
                     pool.apply_async(func=shutil.copy,
-                                     args=(
-                                         related_image_input_path,
-                                         related_image_output_path,
-                                     ),
-                                     callback=update,
-                                     error_callback=err_call_back)
+                                        args=(
+                                            related_image_input_path,
+                                            related_image_output_path,
+                                        ),
+                                        callback=update,
+                                        error_callback=err_call_back)
                 pool.close()
                 pool.join()
                 pbar.close()
@@ -803,7 +811,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
                     annotation_output_path = os.path.join(
                         output_root,
-                        str(index) + '_' + 'annotatons.' +
+                        str(index) + '_pre_annotation' + '.' +
                         dataset_instance.target_dataset_annotation_form)
                     tree.write(annotation_output_path,
                                encoding='utf-8',
@@ -874,8 +882,15 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             )[-1].split(
                                 '.'
                             )[0] + '.' + dataset_instance.target_dataset_image_form
-                            related_image_output_path = os.path.join(
+                            related_image_second_folder = related_image_name.replace(
+                                '.', '_')
+
+                            related_image_output_total_folder = os.path.join(
                                 related_image_output_folder,
+                                related_image_second_folder)
+                            os.makedirs(related_image_output_total_folder)
+                            related_image_output_path = os.path.join(
+                                related_image_output_total_folder,
                                 related_image_name)
                             pool.apply_async(func=shutil.copy,
                                              args=(

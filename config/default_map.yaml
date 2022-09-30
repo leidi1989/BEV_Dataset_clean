@@ -11,10 +11,14 @@ Scp_to_train_server: False
 # 训练服务器ip
 Train_server_ip: "192.168.0.88"
 
+# # 数据集输入路径
+# Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901
+# # 数据集输出路径
+# Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901_map_20220926
 # 数据集输入路径
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901
+Dataset_input_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901_map_20220926
+Dataset_output_folder: /mnt/data_1/Dataset/dataset_temp/changchun_hq1_6v_000304050607_100_80_40_40_20220901_map_20220929
 # 重命名前缀
 File_prefix: changchunmap
 # name delimiter(cityscapes need: "@")
@@ -48,7 +52,7 @@ Draw_car_mask: True
 # 是否为二分类（backgound and object）:
 Two_class: True
 # 输出为CVAT的上传数据集时，单个任务标注数量
-Target_annotation_output_batch_size: 150
+Target_annotation_output_batch_size: 
 # 输出为CVAT的上传数据集时，上传related images
 Related_images: True
 
