@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-29 10:19:42
+LastEditTime: 2022-09-30 10:14:14
 '''
 import ftplib
 import json
@@ -294,6 +294,7 @@ class Dataset_Base:
         )
         self.target_annotation_output_batch_size = dataset_config[
             'Target_annotation_output_batch_size']
+        self.related_images = dataset_config['Related_images']
 
         # 统计设置
         self.only_statistic = dataset_config['Only_statistic']

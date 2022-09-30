@@ -4,11 +4,12 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-29 10:28:27
+LastEditTime: 2022-09-30 10:19:51
 '''
 import shutil
 import multiprocessing
 import xml.etree.ElementTree as ET
+import zipfile
 
 import dataset
 from utils.utils import *
@@ -164,27 +165,27 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         """
 
         print('\nStart transform to target dataset:')
-        class_color_encode_dict = {}
+        dataset_instance.class_color_encode_dict = {}
         for task_class_dict in dataset_instance.task_dict.values():
             if task_class_dict is not None:
                 for n in task_class_dict['Target_dataset_class']:
-                    class_color_encode_dict.update({n: 0})
+                    dataset_instance.class_color_encode_dict.update({n: 0})
         for n, key in zip(
                 random.sample([x for x in range(255)],
-                              len(class_color_encode_dict)),
-                class_color_encode_dict.keys()):
-            class_color_encode_dict[key] = RGB_to_Hex(
+                              len(dataset_instance.class_color_encode_dict)),
+                dataset_instance.class_color_encode_dict.keys()):
+            dataset_instance.class_color_encode_dict[key] = RGB_to_Hex(
                 str(n) + ',' + str(n) + ',' + str(n))
 
         # 生成空基本信息xml文件
         annotations = dataset.__dict__[
             dataset_instance.target_dataset_style].annotation_creat_root(
-                dataset_instance, class_color_encode_dict)
+                dataset_instance)
         # 获取全部图片标签信息列表
         dataset_instance.temp_annotations_path_list = dataset_instance.get_temp_annotations_path_list(
         )
         for task, task_class_dict in tqdm(dataset_instance.task_dict.items(),
-                                        desc='Load each task annotation'):
+                                          desc='Load each task annotation'):
             if task_class_dict is None \
                     or task_class_dict['Target_dataset_class'] is None:
                 continue
@@ -198,15 +199,15 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 total_image_xml.append(
                     pool.apply_async(func=dataset.__dict__[
                         dataset_instance.target_dataset_style].
-                                    annotation_get_temp,
-                                    args=(
-                                        dataset_instance,
-                                        temp_annotation_path,
-                                        task,
-                                        task_class_dict,
-                                    ),
-                                    callback=update,
-                                    error_callback=err_call_back))
+                                     annotation_get_temp,
+                                     args=(
+                                         dataset_instance,
+                                         temp_annotation_path,
+                                         task,
+                                         task_class_dict,
+                                     ),
+                                     callback=update,
+                                     error_callback=err_call_back))
             pool.close()
             pool.join()
             pbar.close()
@@ -224,14 +225,13 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 'annotatons.' +
                 dataset_instance.target_dataset_annotation_form)
             tree.write(annotation_output_path,
-                    encoding='utf-8',
-                    xml_declaration=True)
+                       encoding='utf-8',
+                       xml_declaration=True)
 
         return
 
     @staticmethod
-    def annotation_creat_root(dataset_instance: Dataset_Base,
-                              class_color_encode_dict: dict) -> object:
+    def annotation_creat_root(dataset_instance: Dataset_Base) -> object:
         """创建xml根节点
 
         Args:
@@ -280,7 +280,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             dataset_instance.target_dataset_annotations_folder,
             'class_dict_list.txt')
         with open(class_dict_list_output_path, 'w') as f:
-            for n, c in class_color_encode_dict.items():
+            for n, c in dataset_instance.class_color_encode_dict.items():
                 label = ET.SubElement(labels, 'label')
                 name = ET.SubElement(label, 'name')
                 name.text = n
@@ -632,6 +632,18 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         """
 
         print('\nStart build target dataset folder:')
+        dataset_instance.class_color_encode_dict = {}
+        for task_class_dict in dataset_instance.task_dict.values():
+            if task_class_dict is not None:
+                for n in task_class_dict['Target_dataset_class']:
+                    dataset_instance.class_color_encode_dict.update({n: 0})
+        for n, key in zip(
+                random.sample([x for x in range(255)],
+                              len(dataset_instance.class_color_encode_dict)),
+                dataset_instance.class_color_encode_dict.keys()):
+            dataset_instance.class_color_encode_dict[key] = RGB_to_Hex(
+                str(n) + ',' + str(n) + ',' + str(n))
+
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
                          'cvat_image_1_1'))
@@ -639,34 +651,37 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         output_root = check_output_path(
             os.path.join(dataset_instance.dataset_output_folder,
                          'cvat_image_1_1'))
-        annotations_output_folder = check_output_path(
-            os.path.join(output_root, 'annotations'))
+        # images_total_output_folder = check_output_path(
+        #     os.path.join(output_root, 'images'))
+        # annotations_output_folder = check_output_path(
+        #     os.path.join(output_root, 'annotations'))
 
-        if dataset_instance.target_annotation_output_batch_size =='':
+        if dataset_instance.target_annotation_output_batch_size == None:
             print('Start copy images:')
             image_list = []
-            image_output_folder = check_output_path(
-                os.path.join(output_root, 'images', '0'))
+            related_image_output_folder = check_output_path(
+                os.path.join(output_root, '0'))
             with open(dataset_instance.temp_divide_file_list[0], 'r') as f:
                 for n in f.readlines():
                     image_list.append(n.replace('\n', ''))
             pbar, update = multiprocessing_list_tqdm(image_list,
-                                                    desc='Copy images',
-                                                    leave=False)
+                                                     desc='Copy images',
+                                                     leave=False)
             pool = multiprocessing.Pool(dataset_instance.workers)
             for image_input_path in image_list:
                 annotation_image_input_path = image_input_path.replace(
                     dataset_instance.temp_images_folder,
                     dataset_instance.source_dataset_annotation_image_folder)
                 image_output_path = image_input_path.replace(
-                    dataset_instance.temp_images_folder, image_output_folder)
+                    dataset_instance.temp_images_folder,
+                    related_image_output_folder)
                 pool.apply_async(func=shutil.copy,
-                                args=(
-                                    annotation_image_input_path,
-                                    image_output_path,
-                                ),
-                                callback=update,
-                                error_callback=err_call_back)
+                                 args=(
+                                     annotation_image_input_path,
+                                     image_output_path,
+                                 ),
+                                 callback=update,
+                                 error_callback=err_call_back)
             pool.close()
             pool.join()
             pbar.close()
@@ -678,9 +693,213 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     annotations_input_path = os.path.join(root, n)
                     annotations_output_path = annotations_input_path.replace(
                         dataset_instance.target_dataset_annotations_folder,
-                        annotations_output_folder)
-                    shutil.copy(annotations_input_path, annotations_output_path)
+                        output_root)
+                    shutil.copy(annotations_input_path,
+                                annotations_output_path)
 
-        print('Start copy annotations:')
+            # copy related images
+            if dataset_instance.related_images:
+                print('Start copy related images:')
+                related_image_list = []
+                related_image_output_folder = check_output_path(
+                    os.path.join(output_root, str(index), 'related_images'))
+                for n in temp_annotation_path_list:
+                    related_image_name = n.split(os.sep)[-1].split('.')[0]
+                    related_image_path = os.path.join(
+                        dataset_instance.temp_images_folder,
+                        related_image_name + '.' +
+                        dataset_instance.target_dataset_image_form)
+                    related_image_list.append(related_image_path)
+                pbar, update = multiprocessing_list_tqdm(
+                    related_image_list,
+                    desc='Copy related images',
+                    leave=False)
+                pool = multiprocessing.Pool(dataset_instance.workers)
+                for related_image_input_path in related_image_list:
+                    related_image_name = related_image_input_path.split(
+                        os.sep)[-1].split(
+                            '.'
+                        )[0] + '.' + dataset_instance.target_dataset_image_form
+                    related_image_output_path = os.path.join(
+                        related_image_output_folder, related_image_name)
+                    pool.apply_async(func=shutil.copy,
+                                     args=(
+                                         related_image_input_path,
+                                         related_image_output_path,
+                                     ),
+                                     callback=update,
+                                     error_callback=err_call_back)
+                pool.close()
+                pool.join()
+                pbar.close()
+        else:
+            dataset_instance.temp_annotation_name_list = sorted(
+                dataset_instance.temp_annotation_name_list)
+            temp_annotation_name_list_total = [
+                dataset_instance.temp_annotation_name_list[
+                    i:i + dataset_instance.target_annotation_output_batch_size]
+                for i in range(
+                    0, len(dataset_instance.temp_annotation_name_list),
+                    dataset_instance.target_annotation_output_batch_size)
+            ]
+            temp_annotations_path_list_total = []
+            for temp_annotation_name_list in temp_annotation_name_list_total:
+                temp_annotation_path = []
+                for temp_annotation_name in temp_annotation_name_list:
+                    temp_annotation_path.append(
+                        os.path.join(
+                            dataset_instance.temp_annotations_folder,
+                            temp_annotation_name + '.' +
+                            dataset_instance.temp_annotation_form))
+                temp_annotations_path_list_total.append(temp_annotation_path)
+
+            for index, temp_annotation_path_list in tqdm(
+                    enumerate(temp_annotations_path_list_total),
+                    desc='Get divid annotations'):
+                # 生成空基本信息xml文件
+                annotations = dataset.__dict__[
+                    dataset_instance.
+                    target_dataset_style].annotation_creat_root(
+                        dataset_instance)
+                # 获取全部图片标签信息列表
+                dataset_instance.temp_annotations_path_list = dataset_instance.get_temp_annotations_path_list(
+                )
+                for task, task_class_dict in tqdm(
+                        dataset_instance.task_dict.items(),
+                        desc='Load each task annotation'):
+                    if task_class_dict is None \
+                            or task_class_dict['Target_dataset_class'] is None:
+                        continue
+                    total_image_xml = []
+                    pbar, update = multiprocessing_list_tqdm(
+                        temp_annotation_path_list,
+                        desc='transform to target dataset',
+                        leave=False)
+                    pool = multiprocessing.Pool(dataset_instance.workers)
+                    for temp_annotation_path in temp_annotation_path_list:
+                        total_image_xml.append(
+                            pool.apply_async(func=dataset.__dict__[
+                                dataset_instance.target_dataset_style].
+                                             annotation_get_temp,
+                                             args=(
+                                                 dataset_instance,
+                                                 temp_annotation_path,
+                                                 task,
+                                                 task_class_dict,
+                                             ),
+                                             callback=update,
+                                             error_callback=err_call_back))
+                    pool.close()
+                    pool.join()
+                    pbar.close()
+
+                    # 将image标签信息添加至annotations中
+                    for n, image in enumerate(total_image_xml):
+                        annotation = image.get()
+                        annotation.attrib['id'] = str(n)
+                        annotations.append(annotation)
+
+                    tree = ET.ElementTree(annotations)
+
+                    annotation_output_path = os.path.join(
+                        output_root,
+                        str(index) + '_' + 'annotatons.' +
+                        dataset_instance.target_dataset_annotation_form)
+                    tree.write(annotation_output_path,
+                               encoding='utf-8',
+                               xml_declaration=True)
+
+                    # copy annotation images
+                    print('Start copy annotation images:')
+                    annotation_image_list = []
+                    related_image_output_folder = check_output_path(
+                        os.path.join(output_root, str(index)))
+                    for n in temp_annotation_path_list:
+                        annotation_image_name = n.split(
+                            os.sep)[-1].split('.')[0]
+                        annotation_image_path = os.path.join(
+                            dataset_instance.
+                            source_dataset_annotation_image_folder,
+                            annotation_image_name + '.' +
+                            dataset_instance.target_dataset_image_form)
+                        annotation_image_list.append(annotation_image_path)
+                    pbar, update = multiprocessing_list_tqdm(
+                        annotation_image_list,
+                        desc='Copy annotation images',
+                        leave=False)
+                    pool = multiprocessing.Pool(dataset_instance.workers)
+                    for image_input_path in annotation_image_list:
+                        annotation_image_input_path = image_input_path.replace(
+                            dataset_instance.temp_images_folder,
+                            dataset_instance.
+                            source_dataset_annotation_image_folder)
+                        image_output_path = image_input_path.replace(
+                            dataset_instance.
+                            source_dataset_annotation_image_folder,
+                            related_image_output_folder)
+                        pool.apply_async(func=shutil.copy,
+                                         args=(
+                                             annotation_image_input_path,
+                                             image_output_path,
+                                         ),
+                                         callback=update,
+                                         error_callback=err_call_back)
+                    pool.close()
+                    pool.join()
+                    pbar.close()
+
+                    # copy related images
+                    if dataset_instance.related_images:
+                        print('Start copy related images:')
+                        related_image_list = []
+                        related_image_output_folder = check_output_path(
+                            os.path.join(output_root, str(index),
+                                         'related_images'))
+                        for n in temp_annotation_path_list:
+                            related_image_name = n.split(
+                                os.sep)[-1].split('.')[0]
+                            related_image_path = os.path.join(
+                                dataset_instance.temp_images_folder,
+                                related_image_name + '.' +
+                                dataset_instance.target_dataset_image_form)
+                            related_image_list.append(related_image_path)
+                        pbar, update = multiprocessing_list_tqdm(
+                            related_image_list,
+                            desc='Copy related images',
+                            leave=False)
+                        pool = multiprocessing.Pool(dataset_instance.workers)
+                        for related_image_input_path in related_image_list:
+                            related_image_name = related_image_input_path.split(
+                                os.sep
+                            )[-1].split(
+                                '.'
+                            )[0] + '.' + dataset_instance.target_dataset_image_form
+                            related_image_output_path = os.path.join(
+                                related_image_output_folder,
+                                related_image_name)
+                            pool.apply_async(func=shutil.copy,
+                                             args=(
+                                                 related_image_input_path,
+                                                 related_image_output_path,
+                                             ),
+                                             callback=update,
+                                             error_callback=err_call_back)
+                        pool.close()
+                        pool.join()
+                        pbar.close()
+
+                    # print('Start zip images and annotations:')
+                    zip_source_dir = os.path.join(output_root, str(index))
+                    zip_output_filename = os.path.join(output_root,
+                                                       str(index) + '.zip')
+                    zipf = zipfile.ZipFile(zip_output_filename, 'w')
+                    pre_len = len(os.path.dirname(zip_source_dir))
+                    for parent, _, filenames in os.walk(zip_source_dir):
+                        for filename in filenames:
+                            pathfile = os.path.join(parent, filename)
+                            arcname = pathfile[pre_len:].strip(
+                                os.path.sep)  #相对路径
+                            zipf.write(pathfile, arcname)
+                    zipf.close()
 
         return
