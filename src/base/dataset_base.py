@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-09-30 10:14:14
+LastEditTime: 2022-10-09 18:48:47
 '''
 import ftplib
 import json
@@ -145,6 +145,9 @@ class Dataset_Base:
         self.only_local_map = dataset_config['Only_local_map']
         self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
         self.attitude_z_offset = dataset_config['attitude_z_offset']
+        self.get_dense_pcd_map_bev_image = dataset_config['Get_dense_pcd_map_bev_image']
+        self.pcd_meter_per_pixel = dataset_config['Pcd_meter_per_pixel']
+        self.dense_pcd_map_folder = dataset_config['Dense_pcd_map_folder']
 
         # File_prefix
         self.file_prefix_delimiter = '@' if dataset_config['File_prefix_delimiter'] == '' or \
@@ -1688,6 +1691,7 @@ class Dataset_Base:
 
         x = 0
         pass
+        return
 
     def get_image_mean_std(self, img_filename: str) -> list:
         """[获取图片均值和标准差]

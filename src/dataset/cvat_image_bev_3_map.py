@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 20:46:29
+LastEditTime: 2022-10-09 19:46:39
 '''
 import multiprocessing
 import shutil
@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 
 import cv2
 import lanelet2
+import open3d as o3d
 import utm
 from base.dataset_base import Dataset_Base
 from base.image_base import *
@@ -40,6 +41,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         self.source_dataset_time_folder = check_output_path(
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_times'))
         self.source_dataset_image_form_list = ['jpg', 'png']
+        self.source_dataset_annotation_image_form = 'jpg'
         self.source_dataset_annotation_form = 'xml'
         self.source_dataset_map_form = 'osm'
         self.source_dataset_image_count = self.get_source_dataset_image_count()
@@ -59,6 +61,17 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         #     'cam_back', 'cam_front_center', 'cam_left_back', 'cam_left_front',
         #     'cam_right_back', 'cam_right_front'
         # ]
+        if self.get_dense_pcd_map_bev_image:
+            self.dense_pcd_map_bev_image_folder = check_output_path(
+                os.path.join(opt['Dataset_output_folder'],
+                             'dense_pcd_map_bev_image_folder'))
+            dense_pcd_map_bev_image_path = os.path.join(
+                self.dense_pcd_map_bev_image_folder,
+                'dense_pcd_map_bev_image_location.json')
+            if check_in_file_exists(dense_pcd_map_bev_image_path):
+                with open(dense_pcd_map_bev_image_path, 'r',
+                          encoding='utf8') as fp:
+                    self.dense_pcd_map_location_dict_list = json.load(fp)
 
     def get_utm_origin(self) -> dict:
         """计算utm起始点
@@ -421,6 +434,85 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 annotation_image = image[self.camera_image_wh[1]:, :]
                 cv2.imwrite(temp_image_path, camera)
                 cv2.imwrite(temp_annotation_image_path, annotation_image)
+
+        return
+
+    def create_dense_pcd_map_bev_image(self):
+        """获取稠密点云地图bev图片
+        """
+
+        meter_per_pixel = self.pcd_meter_per_pixel
+        pixel_per_meter = 1 / meter_per_pixel
+        pcd_dir = os.path.join(self.dense_pcd_map_folder,
+                               self.lat_lon_origin_city)
+        pic_dir = self.dense_pcd_map_bev_image_folder
+        location_path = os.path.join(pic_dir,
+                                     'dense_pcd_map_bev_image_location.json')
+        location_file = open(location_path, 'w+')
+        location_file.close()
+        scale = {}
+        scale['meter_per_pixel'] = meter_per_pixel
+        all_locations = []
+        all_locations.append(scale)
+        count = 0
+
+        for folderName, _, filenames in tqdm(
+                os.walk(pcd_dir),
+                desc='Create dense pcd map bev image',
+                leave=True):
+            names = sorted(filenames)
+            for filename in tqdm(names, desc='Pcd file', leave=False):
+                file_path = folderName + '/' + filename
+                pic_name = str(count)
+                pic_path = os.path.join(pic_dir, pic_name + '.jpg')
+                count += 1
+                # pic_path = pic_dir+filename.replace('pcd', 'png')
+                # print("load file :  " + file_path)
+                # print("save file :  " + pic_path)
+                # print('count : ' + pic_name)
+                pcd = o3d.io.read_point_cloud(file_path)
+                points = np.asarray(pcd.points)
+                max_x = np.max(points[:, 0])
+                min_x = np.min(points[:, 0])
+                max_y = np.max(points[:, 1])
+                min_y = np.min(points[:, 1])
+                location = {}
+                location['name'] = pic_name
+                location['min_x'] = min_x
+                location['max_x'] = max_x
+                location['min_y'] = min_y
+                location['max_y'] = max_y
+                all_locations.append(location)
+                colors = np.asarray(pcd.colors) * 255
+                points = np.column_stack((points, colors))
+                pic_width = int((max_x - min_x) / meter_per_pixel)
+                pic_height = int((max_y - min_y) / meter_per_pixel)
+                # print("pic_width: " + str(pic_width))
+                # print("pic_height: " + str(pic_height))
+                # points_size=len(points)
+                # print("points size :  "+str(points_size))
+                points[:, 0] = np.floor(
+                    (points[:, 0] - min_x) * pixel_per_meter)
+                points[:, 1] = np.floor(
+                    (max_y - points[:, 1]) * pixel_per_meter)
+                mask_w = (points[:, 0] >= 0) & (points[:, 0] < pic_width)
+                mask_h = (points[:, 1] >= 0) & (points[:, 1] < pic_height)
+                mask = mask_w & mask_h
+                points = points[mask]
+                bev_pointcloud_image_np = np.zeros([pic_height, pic_width, 3],
+                                                   np.uint8)
+                u = points[:, 0].astype(np.int)
+                v = points[:, 1].astype(np.int)
+                cloud_color = points[:, 3:6].astype(np.uint8)
+                bev_pointcloud_image_np[v, u] = cloud_color
+                bev_pointcloud_image_np = bev_pointcloud_image_np[:, :, ::-1]
+                cv2.imwrite(pic_path, bev_pointcloud_image_np)  # 保存；
+                # print(pic_path + "    gen suceessfully ")
+            location_file = open(location_path, 'w+')
+            json.dump(all_locations, location_file)
+            location_file.close()
+
+        self.dense_pcd_map_location_dict_list = all_locations
 
         return
 
@@ -908,7 +1000,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     continue
                 laneline_list.append(temp_laneline)
                 local_map_total_line_id.append(elem.id)
-
         image = IMAGE(image_name_new, image_name_new, image_path, height,
                       width, channels, object_list, image_ego_pose,
                       image_time_stamp, laneline_list)
@@ -939,6 +1030,13 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 image.file_name_new))
             process_output['fail_count'] += 1
 
+        return
+
+    def get_dense_pcd_map_bev_image_name(self, image_ego_pose):
+
+        dense_pcd_map_bev_image_name = ''
+
+        pass
         return
 
     @staticmethod

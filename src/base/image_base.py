@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:13:19
 LastEditors: Leidi
-LastEditTime: 2022-09-19 15:58:02
+LastEditTime: 2022-10-09 19:02:12
 '''
 import json
 import math
@@ -560,7 +560,8 @@ class IMAGE:
                  object_list_in: list = None,
                  image_ego_pose_dict_in: dict = None,
                  image_time_stamp_in: str = '',
-                 laneline_list_in: list = None) -> None:
+                 laneline_list_in: list = None,
+                 dense_pcd_map_image_name_in: str = '') -> None:
         """图片类
 
         Args:
@@ -584,6 +585,7 @@ class IMAGE:
         self.height = height_in  # 图片高
         self.width = width_in  # 图片宽
         self.channels = channels_in  # 图片通道数
+        self.dense_pcd_map_image_name = dense_pcd_map_image_name_in
         if object_list_in == None:
             self.object_list = []
         else:

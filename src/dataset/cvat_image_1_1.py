@@ -4,18 +4,18 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-30 12:29:21
+LastEditTime: 2022-10-09 20:09:38
 '''
-import shutil
 import multiprocessing
-from turtle import distance
+import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 
-import dataset
-from utils.utils import *
-from base.image_base import *
 from base.dataset_base import Dataset_Base
+from base.image_base import *
+from utils.utils import *
+
+import dataset
 
 
 class CVAT_IMAGE_1_1(Dataset_Base):
@@ -23,10 +23,22 @@ class CVAT_IMAGE_1_1(Dataset_Base):
     def __init__(self, opt) -> None:
         super().__init__(opt)
         self.source_dataset_image_form_list = ['jpg', 'png']
+        self.source_dataset_annotation_image_form = 'jpg'
         self.source_dataset_annotation_form = 'xml'
         self.source_dataset_image_count = self.get_source_dataset_image_count()
         self.source_dataset_annotation_count = self.get_source_dataset_annotation_count(
         )
+        if self.get_dense_pcd_map_bev_image:
+            self.dense_pcd_map_bev_image_folder = check_output_path(
+                os.path.join(opt['Dataset_output_folder'],
+                             'dense_pcd_map_bev_image_folder'))
+            dense_pcd_map_bev_image_path = os.path.join(
+                self.dense_pcd_map_bev_image_folder,
+                'dense_pcd_map_bev_image_location.json')
+            if check_in_file_exists(dense_pcd_map_bev_image_path):
+                with open(dense_pcd_map_bev_image_path, 'r',
+                          encoding='utf8') as fp:
+                    self.dense_pcd_map_location_dict_list = json.load(fp)
 
     def transform_to_temp_dataset(self) -> None:
         """[转换标注文件为暂存标注]
@@ -698,12 +710,10 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             if dataset_instance.related_images:
                 print('Start copy related images:')
                 related_image_output_folder = check_output_path(
-                    os.path.join(output_root, str(0),
-                                    'related_images'))
+                    os.path.join(output_root, str(0), 'related_images'))
                 related_image_list = []
                 for n in os.listdir(dataset_instance.temp_annotations_folder):
-                    related_image_name = n.split(
-                        os.sep)[-1].split('.')[0]
+                    related_image_name = n.split(os.sep)[-1].split('.')[0]
                     related_image_path = os.path.join(
                         dataset_instance.temp_images_folder,
                         related_image_name + '.' +
@@ -716,10 +726,9 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                 pool = multiprocessing.Pool(dataset_instance.workers)
                 for related_image_input_path in related_image_list:
                     related_image_name = related_image_input_path.split(
-                        os.sep
-                    )[-1].split(
-                        '.'
-                    )[0] + '.' + dataset_instance.target_dataset_image_form
+                        os.sep)[-1].split(
+                            '.'
+                        )[0] + '.' + dataset_instance.target_dataset_image_form
                     related_image_second_folder = related_image_name.replace(
                         '.', '_')
 
@@ -728,15 +737,14 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                         related_image_second_folder)
                     os.makedirs(related_image_output_total_folder)
                     related_image_output_path = os.path.join(
-                        related_image_output_total_folder,
-                        related_image_name)
+                        related_image_output_total_folder, related_image_name)
                     pool.apply_async(func=shutil.copy,
-                                        args=(
-                                            related_image_input_path,
-                                            related_image_output_path,
-                                        ),
-                                        callback=update,
-                                        error_callback=err_call_back)
+                                     args=(
+                                         related_image_input_path,
+                                         related_image_output_path,
+                                     ),
+                                     callback=update,
+                                     error_callback=err_call_back)
                 pool.close()
                 pool.join()
                 pbar.close()
@@ -830,30 +838,64 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             annotation_image_name + '.' +
                             dataset_instance.target_dataset_image_form)
                         annotation_image_list.append(annotation_image_path)
-                    pbar, update = multiprocessing_list_tqdm(
-                        annotation_image_list,
-                        desc='Copy annotation images',
-                        leave=False)
-                    pool = multiprocessing.Pool(dataset_instance.workers)
-                    for image_input_path in annotation_image_list:
-                        annotation_image_input_path = image_input_path.replace(
-                            dataset_instance.temp_images_folder,
-                            dataset_instance.
-                            source_dataset_annotation_image_folder)
-                        image_output_path = image_input_path.replace(
-                            dataset_instance.
-                            source_dataset_annotation_image_folder,
-                            related_image_output_folder)
-                        pool.apply_async(func=shutil.copy,
-                                         args=(
-                                             annotation_image_input_path,
-                                             image_output_path,
-                                         ),
-                                         callback=update,
-                                         error_callback=err_call_back)
-                    pool.close()
-                    pool.join()
-                    pbar.close()
+                        
+                    # 是否使用稠密点云地图进行标注
+                    if dataset_instance.get_dense_pcd_map_bev_image:
+                        for annotation_image_input_path in annotation_image_list:
+                            annotation_image_name = annotation_image_input_path.split(
+                                os.sep)[-1]
+                            temp_annotation_name = annotation_image_name.replace(
+                                dataset_instance.
+                                source_dataset_annotation_image_form,
+                                dataset_instance.temp_annotation_form)
+                            temp_annotation_path = os.path.join(
+                                dataset_instance.temp_annotations_folder,
+                                temp_annotation_name)
+                            annotation_image_output_path = annotation_image_input_path.replace(
+                                dataset_instance.
+                                source_dataset_annotation_image_folder,
+                                related_image_output_folder)
+                            image = dataset_instance.TEMP_LOAD(
+                                dataset_instance, temp_annotation_path)
+                            image_dense_map_id = []
+                            for dense_map_dict in dataset_instance.dense_pcd_map_location_dict_list:
+                                if 'meter_per_pixel' in dense_map_dict:
+                                    continue
+                                if dense_map_dict['min_x'] <= image.image_ego_pose_dict[
+                                        'utm_position.x'] <= dense_map_dict[
+                                            'max_x'] and dense_map_dict[
+                                                'min_y'] <= image.image_ego_pose_dict[
+                                                    'utm_position.y'] <= dense_map_dict[
+                                                        'max_y']:
+                                    image_dense_map_id.append(dense_map_dict['name'])
+                            # TODO get_dense_map_bev_image
+                            dataset_instance.get_dense_map_bev_image(dataset_instance, image)
+                            xx = 0
+                    else:
+                        pbar, update = multiprocessing_list_tqdm(
+                            annotation_image_list,
+                            desc='Copy annotation images',
+                            leave=False)
+                        pool = multiprocessing.Pool(dataset_instance.workers)
+                        for annotation_image_input_path in annotation_image_list:
+                            annotation_image_input_path = annotation_image_input_path.replace(
+                                dataset_instance.temp_images_folder,
+                                dataset_instance.
+                                source_dataset_annotation_image_folder)
+                            annotation_image_output_path = annotation_image_input_path.replace(
+                                dataset_instance.
+                                source_dataset_annotation_image_folder,
+                                related_image_output_folder)
+                            pool.apply_async(func=shutil.copy,
+                                             args=(
+                                                 annotation_image_input_path,
+                                                 annotation_image_output_path,
+                                             ),
+                                             callback=update,
+                                             error_callback=err_call_back)
+                        pool.close()
+                        pool.join()
+                        pbar.close()
 
                     # copy related images
                     if dataset_instance.related_images:
@@ -916,3 +958,4 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     zipf.close()
 
         return
+
