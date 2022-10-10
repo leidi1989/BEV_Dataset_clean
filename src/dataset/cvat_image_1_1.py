@@ -4,9 +4,10 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-09 20:09:38
+LastEditTime: 2022-10-10 20:17:08
 '''
 import multiprocessing
+from re import I
 import shutil
 import xml.etree.ElementTree as ET
 import zipfile
@@ -838,10 +839,13 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             annotation_image_name + '.' +
                             dataset_instance.target_dataset_image_form)
                         annotation_image_list.append(annotation_image_path)
-                        
+
                     # 是否使用稠密点云地图进行标注
                     if dataset_instance.get_dense_pcd_map_bev_image:
-                        for annotation_image_input_path in annotation_image_list:
+                        for annotation_image_input_path in tqdm(
+                                annotation_image_list,
+                                desc='Get dense map bev image',
+                                leave=False):
                             annotation_image_name = annotation_image_input_path.split(
                                 os.sep)[-1]
                             temp_annotation_name = annotation_image_name.replace(
@@ -867,10 +871,13 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                                 'min_y'] <= image.image_ego_pose_dict[
                                                     'utm_position.y'] <= dense_map_dict[
                                                         'max_y']:
-                                    image_dense_map_id.append(dense_map_dict['name'])
+                                    image_dense_map_id.append(
+                                        dense_map_dict['name'])
                             # TODO get_dense_map_bev_image
-                            dataset_instance.get_dense_map_bev_image(dataset_instance, image)
-                            xx = 0
+                            if len(image_dense_map_id) == 0:
+                                continue
+                            get_dense_map_bev_image(dataset_instance, image,
+                                                    image_dense_map_id)
                     else:
                         pbar, update = multiprocessing_list_tqdm(
                             annotation_image_list,
@@ -959,3 +966,72 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
         return
 
+
+def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
+                            image_dense_map_id: list):
+    if 1 == len(image_dense_map_id):
+        temp_dense_pcd_map_dict = dataset_instance.dense_pcd_map_location_total_dict[
+            image_dense_map_id[0]]
+        temp_dense_pcd_map_path = os.path.join(
+            dataset_instance.dense_pcd_map_bev_image_folder,
+            temp_dense_pcd_map_dict['name'] + '.jpg')
+        temp_dense_pcd_map = cv2.imread(temp_dense_pcd_map_path)
+
+        h_scale = (temp_dense_pcd_map_dict['max_y'] -
+                   image.image_ego_pose_dict['utm_position.y']) / (
+                       temp_dense_pcd_map_dict['max_y'] -
+                       temp_dense_pcd_map_dict['min_y'])
+
+        w_scale = (image.image_ego_pose_dict['utm_position.x'] -
+                   temp_dense_pcd_map_dict['min_x']) / (
+                       temp_dense_pcd_map_dict['max_x'] -
+                       temp_dense_pcd_map_dict['min_x'])
+
+        self_local_u = int(temp_dense_pcd_map.shape[1] * w_scale)
+        self_local_v = int(temp_dense_pcd_map.shape[0] * h_scale)
+
+        local_pcd_map_w = (dataset_instance.label_range[2] +
+                           dataset_instance.label_range[3]
+                           ) / dataset_instance.pcd_meter_per_pixel
+        local_pcd_map_h = (dataset_instance.label_range[0] +
+                           dataset_instance.label_range[1]
+                           ) / dataset_instance.pcd_meter_per_pixel
+
+        local_pac_map_image_tlx = int(self_local_u - local_pcd_map_w *
+                                      dataset_instance.label_range[2] /
+                                      (dataset_instance.label_range[2] +
+                                       dataset_instance.label_range[3]))
+        local_pac_map_image_tly = int(self_local_v - local_pcd_map_h *
+                                      dataset_instance.label_range[0] /
+                                      (dataset_instance.label_range[0] +
+                                       dataset_instance.label_range[1]))
+        local_pac_map_image_brx = int(self_local_u + local_pcd_map_w *
+                                      dataset_instance.label_range[2] /
+                                      (dataset_instance.label_range[2] +
+                                       dataset_instance.label_range[3]))
+        local_pac_map_image_bry = int(self_local_v + local_pcd_map_h *
+                                      dataset_instance.label_range[1] /
+                                      (dataset_instance.label_range[0] +
+                                       dataset_instance.label_range[1]))
+        # local_pac_map_image_tlx_ = (local_pac_map_image_tlx - utm_x) * np.cos(att_z) + (point[1] -
+        #                                                utm_y) * np.sin(att_z)
+        # local_pac_map_image_tly_ = (local_pac_map_image_tly - utm_y) * np.cos(att_z) - (point[0] -
+        #                                             utm_x) * np.sin(att_z)
+        
+        # local_pac_map_image_brx_ = (local_pac_map_image_brx - utm_x) * np.cos(att_z) + (point[1] -
+        #                                                utm_y) * np.sin(att_z)
+        # local_pac_map_image_bry_ = (local_pac_map_image_bry - utm_y) * np.cos(att_z) - (point[0] -
+        #                                             utm_x) * np.sin(att_z)
+        
+        
+        cv2.circle(temp_dense_pcd_map, (self_local_u, self_local_v), 5,
+                   (0, 0, 255), -1)
+        local_pac_map_image = temp_dense_pcd_map[
+            local_pac_map_image_tly:local_pac_map_image_bry,
+            local_pac_map_image_tlx:local_pac_map_image_brx]
+        local_pac_map_image = cv2.resize(local_pac_map_image, (320, 720))
+        cv2.imshow('test', local_pac_map_image)
+        cv2.waitKey(0)
+        x = 0
+    pass
+    return

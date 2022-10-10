@@ -87,8 +87,12 @@ attitude_z_offset: 0.065
 Get_dense_pcd_map_bev_image: True
 # dense pcd map folder
 Dense_pcd_map_folder: /mnt/data_1/Dataset/dataset_temp/dense_pcd_map
+# map type
+Dense_pcd_map_style: mercator
+# map type transform
+Map_style_transform: utm
 # meter_per_pixel
-Pcd_meter_per_pixel: 0.05
+Pcd_meter_per_pixel: 0.25
 
 # 标注时标注图片与相机图片是否已经拼接在一起
 Camera_label_image_concat: True

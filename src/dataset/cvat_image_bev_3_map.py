@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-09 19:46:39
+LastEditTime: 2022-10-10 19:52:29
 '''
 import multiprocessing
 import shutil
@@ -16,6 +16,7 @@ import open3d as o3d
 import utm
 from base.dataset_base import Dataset_Base
 from base.image_base import *
+from pyproj import Proj
 from utils import image_form_transform
 from utils.utils import *
 
@@ -68,10 +69,14 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             dense_pcd_map_bev_image_path = os.path.join(
                 self.dense_pcd_map_bev_image_folder,
                 'dense_pcd_map_bev_image_location.json')
-            if check_in_file_exists(dense_pcd_map_bev_image_path):
+            if os.path.exists(dense_pcd_map_bev_image_path):
                 with open(dense_pcd_map_bev_image_path, 'r',
                           encoding='utf8') as fp:
                     self.dense_pcd_map_location_dict_list = json.load(fp)
+                self.dense_pcd_map_location_total_dict = {}
+                for dense_map_dict in self.dense_pcd_map_location_dict_list:
+                    self.dense_pcd_map_location_total_dict.update(
+                        {dense_map_dict['name']: dense_map_dict})
 
     def get_utm_origin(self) -> dict:
         """计算utm起始点
@@ -448,73 +453,175 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         pic_dir = self.dense_pcd_map_bev_image_folder
         location_path = os.path.join(pic_dir,
                                      'dense_pcd_map_bev_image_location.json')
-        location_file = open(location_path, 'w+')
-        location_file.close()
         scale = {}
         scale['meter_per_pixel'] = meter_per_pixel
-        all_locations = []
-        all_locations.append(scale)
-        count = 0
 
+        file_name_dict = {}
+        count = 0
         for folderName, _, filenames in tqdm(
                 os.walk(pcd_dir),
                 desc='Create dense pcd map bev image',
                 leave=True):
             names = sorted(filenames)
             for filename in tqdm(names, desc='Pcd file', leave=False):
-                file_path = folderName + '/' + filename
                 pic_name = str(count)
-                pic_path = os.path.join(pic_dir, pic_name + '.jpg')
                 count += 1
-                # pic_path = pic_dir+filename.replace('pcd', 'png')
-                # print("load file :  " + file_path)
-                # print("save file :  " + pic_path)
-                # print('count : ' + pic_name)
-                pcd = o3d.io.read_point_cloud(file_path)
-                points = np.asarray(pcd.points)
-                max_x = np.max(points[:, 0])
-                min_x = np.min(points[:, 0])
-                max_y = np.max(points[:, 1])
-                min_y = np.min(points[:, 1])
-                location = {}
-                location['name'] = pic_name
-                location['min_x'] = min_x
-                location['max_x'] = max_x
-                location['min_y'] = min_y
-                location['max_y'] = max_y
-                all_locations.append(location)
-                colors = np.asarray(pcd.colors) * 255
-                points = np.column_stack((points, colors))
-                pic_width = int((max_x - min_x) / meter_per_pixel)
-                pic_height = int((max_y - min_y) / meter_per_pixel)
-                # print("pic_width: " + str(pic_width))
-                # print("pic_height: " + str(pic_height))
-                # points_size=len(points)
-                # print("points size :  "+str(points_size))
-                points[:, 0] = np.floor(
-                    (points[:, 0] - min_x) * pixel_per_meter)
-                points[:, 1] = np.floor(
-                    (max_y - points[:, 1]) * pixel_per_meter)
-                mask_w = (points[:, 0] >= 0) & (points[:, 0] < pic_width)
-                mask_h = (points[:, 1] >= 0) & (points[:, 1] < pic_height)
-                mask = mask_w & mask_h
-                points = points[mask]
-                bev_pointcloud_image_np = np.zeros([pic_height, pic_width, 3],
-                                                   np.uint8)
-                u = points[:, 0].astype(np.int)
-                v = points[:, 1].astype(np.int)
-                cloud_color = points[:, 3:6].astype(np.uint8)
-                bev_pointcloud_image_np[v, u] = cloud_color
-                bev_pointcloud_image_np = bev_pointcloud_image_np[:, :, ::-1]
-                cv2.imwrite(pic_path, bev_pointcloud_image_np)  # 保存；
-                # print(pic_path + "    gen suceessfully ")
+                file_name_dict.update({filename: pic_name})
+
+        # TODO 点云转换坐标系
+        if self.map_type_transform_style is not None:
+            for folderName, _, filenames in tqdm(
+                    os.walk(pcd_dir),
+                    desc='Create dense pcd map bev image',
+                    leave=True):
+                names = sorted(filenames)
+                pool = multiprocessing.Pool(8)
+                pbar, update = multiprocessing_list_tqdm(names,
+                                                         desc='Total pcd',
+                                                         leave=False)
+                for filename in tqdm(names, desc='Pcd file', leave=False):
+                    pcd_input_path = os.path.join(folderName, filename)
+                    pcd_output_path = os.path.join(
+                        self.source_dense_pcd_map_folder,
+                        file_name_dict[filename] + '.pcd')
+                    # cloud_mercator_2_utm_map(pcd_input_path, pcd_output_path, mercator, origin_utm)
+                    if self.map_type_transform_style == 'utm':
+                        pool.apply_async(func=self.cloud_mercator_2_utm_map,
+                                        args=(
+                                            pcd_input_path,
+                                            pcd_output_path,
+                                        ),
+                                        callback=update,
+                                        error_callback=err_call_back)
+
+                pool.close()
+                pool.join()
+                pbar.close()
+
+        all_locations = []
+
+        names = sorted(os.listdir(self.source_dense_pcd_map_folder))
+        pool = multiprocessing.Pool(8)
+        pbar, update = multiprocessing_list_tqdm(names,
+                                                 desc='Total images',
+                                                 leave=False)
+        for filename in tqdm(names, desc='Pcd file', leave=False):
+            all_locations.append(
+                pool.apply_async(func=self.create_bev_pointcloud_image,
+                                 args=(filename, pic_dir, meter_per_pixel,
+                                       pixel_per_meter),
+                                 callback=update,
+                                 error_callback=err_call_back))
+        pool.close()
+        pool.join()
+        pbar.close()
+
+        all_locations_output = []
+        if len(all_locations):
+            for n in all_locations:
+                all_locations_output.append(n.get())
             location_file = open(location_path, 'w+')
-            json.dump(all_locations, location_file)
+            json.dump(all_locations_output, location_file)
             location_file.close()
 
-        self.dense_pcd_map_location_dict_list = all_locations
+        self.dense_pcd_map_location_dict_list = all_locations_output
+        self.dense_pcd_map_location_total_dict = {}
+        for dense_map_dict in self.dense_pcd_map_location_dict_list:
+            self.dense_pcd_map_location_total_dict.update(
+                {dense_map_dict['name']: dense_map_dict})
 
         return
+
+    def xy2ll_Mercator_map(self, x: float, y: float, mercator: Proj):
+        lon, lat = mercator(x, y, inverse=True)
+        return lat, lon
+
+    def ll2xy_Utm_map(self, lat: float, lon: float, origin_utm: dict):
+        """latitude and longtitude to x and y"""
+        # global origin_lat, origin_lon, origin_x, origin_y, zone_number, zone_letter
+        easting, northing, _, _ = utm.from_latlon(lat, lon,
+                                                  origin_utm['zone_number'],
+                                                  origin_utm['zone_letter'])
+        x = easting - origin_utm['origin_x']
+        y = northing - origin_utm['origin_y']
+        return x, y
+
+    def cloud_mercator_2_utm_map(self, pcd_input_path: str,
+                                 pcd_output_path: str) -> None:
+        """将mercator点云转换为utm点云
+
+        Args:
+            pcd_input_path (str): 点云输入路径
+            pcd_output_path (str): 点云输出路径
+        """
+
+        origin_utm = self.get_utm_origin()
+        lat_string = str(self.lat_lon_origin[self.lat_lon_origin_city]['lat'])
+        lon_string = str(self.lat_lon_origin[self.lat_lon_origin_city]['lon'])
+        proj_string = '+proj=tmerc +lat_0=' + lat_string + ' +lon_0=' + lon_string + ' +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs'
+        mercator = Proj(proj_string, preserve_units=False)
+
+        pcd = o3d.io.read_point_cloud(pcd_input_path)
+        pcd_points = np.asarray(pcd.points)
+        lat, lon = self.xy2ll_Mercator_map(pcd_points[:, 0], pcd_points[:, 1],
+                                           mercator)
+        pcd_points[:, 0], pcd_points[:, 1] = self.ll2xy_Utm_map(
+            lat, lon, origin_utm)
+        pcd.points = o3d.utility.Vector3dVector(pcd_points)
+        o3d.io.write_point_cloud(pcd_output_path, pcd)
+
+        return
+
+    def create_bev_pointcloud_image(self, filename: str, pic_dir: str,
+                                    meter_per_pixel: float,
+                                    pixel_per_meter: float) -> dict:
+        """创建稠密点云鸟瞰图
+
+        Args:
+            filename (str): 点云文件名
+            pic_dir (str): 图片输出路径
+            meter_per_pixel (float): 每米像素个数
+            pixel_per_meter (float): 每像素距离为多少米
+
+        Returns:
+            dict: 地图像素与坐标关系信息
+        """
+        
+        file_path = os.path.join(self.source_dense_pcd_map_folder, filename)
+        pic_name = filename.split('.')[0]
+        pic_path = os.path.join(pic_dir, pic_name + '.jpg')
+        pcd = o3d.io.read_point_cloud(file_path)
+        points = np.asarray(pcd.points)
+        max_x = np.max(points[:, 0])
+        min_x = np.min(points[:, 0])
+        max_y = np.max(points[:, 1])
+        min_y = np.min(points[:, 1])
+        location = {}
+        location['name'] = pic_name
+        location['min_x'] = min_x
+        location['max_x'] = max_x
+        location['min_y'] = min_y
+        location['max_y'] = max_y
+        colors = np.asarray(pcd.colors) * 255
+        points = np.column_stack((points, colors))
+        pic_width = int((max_x - min_x) / meter_per_pixel)
+        pic_height = int((max_y - min_y) / meter_per_pixel)
+        points[:, 0] = np.floor((points[:, 0] - min_x) * pixel_per_meter)
+        points[:, 1] = np.floor((max_y - points[:, 1]) * pixel_per_meter)
+        mask_w = (points[:, 0] >= 0) & (points[:, 0] < pic_width)
+        mask_h = (points[:, 1] >= 0) & (points[:, 1] < pic_height)
+        mask = mask_w & mask_h
+        points = points[mask]
+        bev_pointcloud_image_np = np.zeros([pic_height, pic_width, 3],
+                                           np.uint8)
+        u = points[:, 0].astype(np.int)
+        v = points[:, 1].astype(np.int)
+        cloud_color = points[:, 3:6].astype(np.uint8)
+        bev_pointcloud_image_np[v, u] = cloud_color
+        bev_pointcloud_image_np = bev_pointcloud_image_np[:, :, ::-1]
+        cv2.imwrite(pic_path, bev_pointcloud_image_np)  # 保存；
+
+        return location
 
     def transform_to_temp_dataset(self) -> None:
         """[转换标注文件为暂存标注]
