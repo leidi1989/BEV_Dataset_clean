@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-11 16:45:10
+LastEditTime: 2022-10-11 16:50:21
 '''
 import multiprocessing
 from re import I
@@ -877,7 +877,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             if len(image_dense_map_id) == 0:
                                 continue
                             get_dense_map_bev_image(dataset_instance, image,
-                                                    image_dense_map_id)
+                                                    image_dense_map_id, annotation_image_output_path)
                     else:
                         pbar, update = multiprocessing_list_tqdm(
                             annotation_image_list,
@@ -968,7 +968,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
 
 def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
-                            image_dense_map_id: list):
+                            image_dense_map_id: list, annotation_image_output_path:str):
     if 1 == len(image_dense_map_id):
         temp_dense_pcd_map_dict = dataset_instance.dense_pcd_map_location_total_dict[
             image_dense_map_id[0]]
@@ -1055,8 +1055,6 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
         cv2.imshow('after rotation output image', output_local_pac_map_image)
         cv2.waitKey(0)
         
+        cv2.imwrite(annotation_image_output_path, output_local_pac_map_image)
         
-        
-        x = 0
-    pass
     return

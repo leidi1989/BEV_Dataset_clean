@@ -92,7 +92,7 @@ Dense_pcd_map_style: mercator
 # map type transform
 Map_style_transform: utm
 # meter_per_pixel
-Pcd_meter_per_pixel: 0.25
+Pcd_meter_per_pixel: 0.025
 
 # 标注时标注图片与相机图片是否已经拼接在一起
 Camera_label_image_concat: True
