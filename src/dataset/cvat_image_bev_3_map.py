@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-10 19:52:29
+LastEditTime: 2022-10-11 16:58:50
 '''
 import multiprocessing
 import shutil
@@ -475,7 +475,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     desc='Create dense pcd map bev image',
                     leave=True):
                 names = sorted(filenames)
-                pool = multiprocessing.Pool(8)
+                pool = multiprocessing.Pool(self.workers if 1== self.worker else 4)
                 pbar, update = multiprocessing_list_tqdm(names,
                                                          desc='Total pcd',
                                                          leave=False)
@@ -501,7 +501,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         all_locations = []
 
         names = sorted(os.listdir(self.source_dense_pcd_map_folder))
-        pool = multiprocessing.Pool(8)
+        pool = multiprocessing.Pool(self.workers if 1== self.worker else 4)
         pbar, update = multiprocessing_list_tqdm(names,
                                                  desc='Total images',
                                                  leave=False)

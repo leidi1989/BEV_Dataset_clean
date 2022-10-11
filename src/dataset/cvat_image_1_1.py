@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-11 16:50:21
+LastEditTime: 2022-10-11 16:53:40
 '''
 import multiprocessing
 from re import I
@@ -841,7 +841,48 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                         annotation_image_list.append(annotation_image_path)
 
                     # 是否使用稠密点云地图进行标注
+                    # if dataset_instance.get_dense_pcd_map_bev_image:
+                    #     for annotation_image_input_path in tqdm(
+                    #             annotation_image_list,
+                    #             desc='Get dense map bev image',
+                    #             leave=False):
+                    #         annotation_image_name = annotation_image_input_path.split(
+                    #             os.sep)[-1]
+                    #         temp_annotation_name = annotation_image_name.replace(
+                    #             dataset_instance.
+                    #             source_dataset_annotation_image_form,
+                    #             dataset_instance.temp_annotation_form)
+                    #         temp_annotation_path = os.path.join(
+                    #             dataset_instance.temp_annotations_folder,
+                    #             temp_annotation_name)
+                    #         annotation_image_output_path = annotation_image_input_path.replace(
+                    #             dataset_instance.
+                    #             source_dataset_annotation_image_folder,
+                    #             related_image_output_folder)
+                    #         image = dataset_instance.TEMP_LOAD(
+                    #             dataset_instance, temp_annotation_path)
+                    #         image_dense_map_id = []
+                    #         for dense_map_dict in dataset_instance.dense_pcd_map_location_dict_list:
+                    #             if 'meter_per_pixel' in dense_map_dict:
+                    #                 continue
+                    #             if dense_map_dict['min_x'] <= image.image_ego_pose_dict[
+                    #                     'utm_position.x'] <= dense_map_dict[
+                    #                         'max_x'] and dense_map_dict[
+                    #                             'min_y'] <= image.image_ego_pose_dict[
+                    #                                 'utm_position.y'] <= dense_map_dict[
+                    #                                     'max_y']:
+                    #                 image_dense_map_id.append(
+                    #                     dense_map_dict['name'])
+                    #         if len(image_dense_map_id) == 0:
+                    #             continue
+                    #         get_dense_map_bev_image(dataset_instance, image,
+                    #                                 image_dense_map_id, annotation_image_output_path)
                     if dataset_instance.get_dense_pcd_map_bev_image:
+                        pbar, update = multiprocessing_list_tqdm(
+                            annotation_image_list,
+                            desc='Create annotation images',
+                            leave=False)
+                        pool = multiprocessing.Pool(dataset_instance.workers)
                         for annotation_image_input_path in tqdm(
                                 annotation_image_list,
                                 desc='Get dense map bev image',
@@ -873,7 +914,6 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                                         'max_y']:
                                     image_dense_map_id.append(
                                         dense_map_dict['name'])
-                            # TODO get_dense_map_bev_image
                             if len(image_dense_map_id) == 0:
                                 continue
                             get_dense_map_bev_image(dataset_instance, image,
