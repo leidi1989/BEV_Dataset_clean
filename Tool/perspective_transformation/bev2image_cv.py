@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-08-03 14:19:20
 LastEditors: Leidi
-LastEditTime: 2022-08-17 19:50:06
+LastEditTime: 2022-10-11 15:58:43
 '''
 import argparse
 import os
@@ -22,6 +22,53 @@ import yaml
 from Clean_up.utils.utils import *
 
 from get_image import TEMP_LOAD
+
+
+def self_position_parse(self, camera_image_height: int, label_image_width: int,
+                        label_image_height: int, front_range: int,
+                        back_range: int, left_range: int,
+                        right_range: int) -> tuple:
+    """计算自车中心像素坐标(x,y)，以真实前距、左距比例计算
+
+        Args:
+            camera_image_height (int): 相机图像高度
+            label_image_width (int): label图像宽度
+            label_image_height (int): label图像高度
+            front_range (int): 车辆前方距离
+            back_range (int): 车辆后方距离
+            left_range (int): 车辆左侧距离
+            right_range (int): 车辆右侧距离
+
+        Returns:
+            tuple: (x,y)
+        """
+    # 计算本车中心点像素坐标(图片由上camera+下label组成)
+    if not self.camera_label_image_concat:
+        self_ycenter = label_image_height * \
+            (front_range/(front_range+back_range)) + camera_image_height
+        self_xcenter = label_image_width * (left_range /
+                                            (left_range + right_range))
+    else:
+        self_ycenter = label_image_height * \
+            (front_range/(front_range+back_range))
+        self_xcenter = label_image_width * (left_range /
+                                            (left_range + right_range))
+
+    return (int(self_xcenter), int(self_ycenter))
+
+
+def distance_pixel_rate(self, real_distance: int,
+                        pixel_distance: int) -> float:
+    """计算真实距离与像素距离的换算关系(m/pixel)
+
+        Args:
+            real_distance (int): 真实距离
+            pixel_distance (int): 像素距离
+
+        Returns:
+            float: m/pixel
+        """
+    return float(real_distance) / float(pixel_distance)
 
 
 def get_vehicle_xyz(dataset_instance, object: OBJECT) -> list:

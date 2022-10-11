@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-10 20:17:08
+LastEditTime: 2022-10-11 16:45:10
 '''
 import multiprocessing
 from re import I
@@ -986,52 +986,77 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
                    temp_dense_pcd_map_dict['min_x']) / (
                        temp_dense_pcd_map_dict['max_x'] -
                        temp_dense_pcd_map_dict['min_x'])
-
         self_local_u = int(temp_dense_pcd_map.shape[1] * w_scale)
         self_local_v = int(temp_dense_pcd_map.shape[0] * h_scale)
-
-        local_pcd_map_w = (dataset_instance.label_range[2] +
-                           dataset_instance.label_range[3]
-                           ) / dataset_instance.pcd_meter_per_pixel
-        local_pcd_map_h = (dataset_instance.label_range[0] +
-                           dataset_instance.label_range[1]
-                           ) / dataset_instance.pcd_meter_per_pixel
-
-        local_pac_map_image_tlx = int(self_local_u - local_pcd_map_w *
-                                      dataset_instance.label_range[2] /
-                                      (dataset_instance.label_range[2] +
-                                       dataset_instance.label_range[3]))
-        local_pac_map_image_tly = int(self_local_v - local_pcd_map_h *
-                                      dataset_instance.label_range[0] /
-                                      (dataset_instance.label_range[0] +
-                                       dataset_instance.label_range[1]))
-        local_pac_map_image_brx = int(self_local_u + local_pcd_map_w *
-                                      dataset_instance.label_range[2] /
-                                      (dataset_instance.label_range[2] +
-                                       dataset_instance.label_range[3]))
-        local_pac_map_image_bry = int(self_local_v + local_pcd_map_h *
-                                      dataset_instance.label_range[1] /
-                                      (dataset_instance.label_range[0] +
-                                       dataset_instance.label_range[1]))
-        # local_pac_map_image_tlx_ = (local_pac_map_image_tlx - utm_x) * np.cos(att_z) + (point[1] -
-        #                                                utm_y) * np.sin(att_z)
-        # local_pac_map_image_tly_ = (local_pac_map_image_tly - utm_y) * np.cos(att_z) - (point[0] -
-        #                                             utm_x) * np.sin(att_z)
         
-        # local_pac_map_image_brx_ = (local_pac_map_image_brx - utm_x) * np.cos(att_z) + (point[1] -
-        #                                                utm_y) * np.sin(att_z)
-        # local_pac_map_image_bry_ = (local_pac_map_image_bry - utm_y) * np.cos(att_z) - (point[0] -
-        #                                             utm_x) * np.sin(att_z)
-        
-        
-        cv2.circle(temp_dense_pcd_map, (self_local_u, self_local_v), 5,
+        # 绘制自车位置
+        cv2.circle(temp_dense_pcd_map, (self_local_u, self_local_v), 3,
                    (0, 0, 255), -1)
-        local_pac_map_image = temp_dense_pcd_map[
-            local_pac_map_image_tly:local_pac_map_image_bry,
-            local_pac_map_image_tlx:local_pac_map_image_brx]
-        local_pac_map_image = cv2.resize(local_pac_map_image, (320, 720))
-        cv2.imshow('test', local_pac_map_image)
+
+        # local_pcd_map各边uv
+        local_pcd_map_whwh = [
+            dataset_instance.label_range[0] /
+            dataset_instance.pcd_meter_per_pixel,
+            dataset_instance.label_range[1] /
+            dataset_instance.pcd_meter_per_pixel,
+            dataset_instance.label_range[2] /
+            dataset_instance.pcd_meter_per_pixel,
+            dataset_instance.label_range[3] /
+            dataset_instance.pcd_meter_per_pixel
+        ]
+        
+        # 获取截取外围正方形
+        local_pcd_map_edge_max = max(local_pcd_map_whwh)
+        expand_local_pcd_map_w = local_pcd_map_edge_max * 2
+        expand_local_pcd_map_h = local_pcd_map_edge_max * 2
+        expand_local_pcd_map_image_tlx = int(self_local_u - local_pcd_map_edge_max)
+        expand_local_pcd_map_image_tly = int(self_local_v - local_pcd_map_edge_max)
+        expand_local_pcd_map_image_brx = int(self_local_u + local_pcd_map_edge_max)
+        expand_local_pcd_map_image_bry = int(self_local_v + local_pcd_map_edge_max)
+        expand_local_pcd_map_image = temp_dense_pcd_map[
+            expand_local_pcd_map_image_tly:expand_local_pcd_map_image_bry,
+            expand_local_pcd_map_image_tlx:expand_local_pcd_map_image_brx]
+        cv2.imshow('before rotation expand', expand_local_pcd_map_image)
+
+        # 旋转
+        expand_center_u = local_pcd_map_edge_max
+        expand_center_v = local_pcd_map_edge_max
+        angle = 180 - image.image_ego_pose_dict['attitude.z'] * 180
+        # 获得旋转矩阵
+        M = cv2.getRotationMatrix2D((expand_center_u, expand_center_v), angle,
+                                    1)
+        # 进行仿射变换，边界填充为255，即白色，默认为0，即黑色
+        expand_local_pcd_map_image_rotation = cv2.warpAffine(
+            src=expand_local_pcd_map_image,
+            M=M,
+            dsize=(int(expand_local_pcd_map_w),
+                   int(expand_local_pcd_map_h)),
+            borderValue=(255, 255, 255))
+        cv2.imshow('after rotation local pcd map image',
+                   expand_local_pcd_map_image_rotation)
+       
+        # 截取最终输出图片
+        output_local_pcd_map_image_tlx = int(
+            expand_center_u - dataset_instance.label_range[2] /
+            dataset_instance.pcd_meter_per_pixel)
+        output_local_pcd_map_image_tly = int(
+            expand_center_v - dataset_instance.label_range[0] /
+            dataset_instance.pcd_meter_per_pixel)
+        output_local_pcd_map_image_brx = int(
+            expand_center_u + dataset_instance.label_range[3] /
+            dataset_instance.pcd_meter_per_pixel)
+        output_local_pcd_map_image_bry = int(
+            expand_center_v + dataset_instance.label_range[1] /
+            dataset_instance.pcd_meter_per_pixel)
+
+        output_local_pac_map_image = expand_local_pcd_map_image_rotation[
+            output_local_pcd_map_image_tly:output_local_pcd_map_image_bry,
+            output_local_pcd_map_image_tlx:output_local_pcd_map_image_brx]
+        cv2.imshow('after rotation output image', output_local_pac_map_image)
         cv2.waitKey(0)
+        
+        
+        
         x = 0
     pass
     return
