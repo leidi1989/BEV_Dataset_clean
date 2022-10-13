@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-12 20:49:50
+LastEditTime: 2022-10-13 18:53:10
 '''
 from decimal import Clamped
 import multiprocessing
@@ -773,7 +773,11 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
             for index, temp_annotation_path_list in tqdm(
                     enumerate(temp_annotations_path_list_total),
-                    desc='Get divid annotations'):
+                    desc='Get divid annotations',
+                    leave=True):
+                # TODO set start index
+                # if index <= 85:
+                #     continue
                 # 生成空基本信息xml文件
                 annotations = dataset.__dict__[
                     dataset_instance.
@@ -1139,7 +1143,7 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
     expand_center_u = local_pcd_map_edge_max
     expand_center_v = local_pcd_map_edge_max
     angle = 90.0 - image.image_ego_pose_dict['attitude.z'] * 180 / 3.14
-    
+
     # 获得旋转矩阵
     M = cv2.getRotationMatrix2D((expand_center_u, expand_center_v), angle, 1)
     # 进行仿射变换，边界填充为255，即白色，默认为0，即黑色
