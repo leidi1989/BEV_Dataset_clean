@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-11 16:58:50
+LastEditTime: 2022-10-12 20:49:14
 '''
 import multiprocessing
 import shutil
@@ -65,7 +65,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         if self.get_dense_pcd_map_bev_image:
             self.dense_pcd_map_bev_image_folder = check_output_path(
                 os.path.join(opt['Dataset_output_folder'],
-                             'dense_pcd_map_bev_image_folder'))
+                             'dense_pcd_map_bev_images'))
             dense_pcd_map_bev_image_path = os.path.join(
                 self.dense_pcd_map_bev_image_folder,
                 'dense_pcd_map_bev_image_location.json')
@@ -475,7 +475,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     desc='Create dense pcd map bev image',
                     leave=True):
                 names = sorted(filenames)
-                pool = multiprocessing.Pool(self.workers if 1== self.worker else 4)
+                pool = multiprocessing.Pool(self.workers if 1== self.workers else 4)
                 pbar, update = multiprocessing_list_tqdm(names,
                                                          desc='Total pcd',
                                                          leave=False)
@@ -501,7 +501,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         all_locations = []
 
         names = sorted(os.listdir(self.source_dense_pcd_map_folder))
-        pool = multiprocessing.Pool(self.workers if 1== self.worker else 4)
+        pool = multiprocessing.Pool(self.workers if 1== self.workers else 4)
         pbar, update = multiprocessing_list_tqdm(names,
                                                  desc='Total images',
                                                  leave=False)
@@ -1065,7 +1065,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             "utm_position.z": utm_z,
             "attitude.x": self.image_ego_pose_dict[image_name_new][6],
             "attitude.y": self.image_ego_pose_dict[image_name_new][7],
-            "attitude.z": self.image_ego_pose_dict[image_name_new][8] -
+            "attitude.z": self.image_ego_pose_dict[image_name_new][8] +
             self.attitude_z_offset,
             "position_type": int(self.image_ego_pose_dict[image_name_new][9]),
             "osm_file_name": osm_file_name,
@@ -1137,13 +1137,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                 image.file_name_new))
             process_output['fail_count'] += 1
 
-        return
-
-    def get_dense_pcd_map_bev_image_name(self, image_ego_pose):
-
-        dense_pcd_map_bev_image_name = ''
-
-        pass
         return
 
     @staticmethod

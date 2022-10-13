@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 '''
 Description: 
 Version: 
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-10-11 17:00:40
+LastEditTime: 2022-10-13 09:30:29
 '''
 import argparse
 import time
@@ -33,7 +34,7 @@ def clean(dataset_config: dict) -> None:
     #     Input_dataset.get_dataset_image_mean_std()
     #     Input_dataset.check_dataset_image_mean_std()
     #     pass
-    Input_dataset.divide_dataset()
+    # Input_dataset.divide_dataset()
     # Input_dataset.sample_statistics()
 
     if not Input_dataset.only_statistic:
@@ -66,7 +67,7 @@ if __name__ == "__main__":
         '--workers',
         '--w',
         dest='workers',
-        default=8,
+        default=2,
         type=int,
         help='maximum number of dataloader workers(multiprocessing.cpu_count())'
     )

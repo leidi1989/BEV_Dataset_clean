@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-11 20:38:58
+LastEditTime: 2022-10-12 20:49:50
 '''
 from decimal import Clamped
 import multiprocessing
@@ -33,7 +33,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
         if self.get_dense_pcd_map_bev_image:
             self.dense_pcd_map_bev_image_folder = check_output_path(
                 os.path.join(opt['Dataset_output_folder'],
-                             'dense_pcd_map_bev_image_folder'))
+                             'dense_pcd_map_bev_images'))
             dense_pcd_map_bev_image_path = os.path.join(
                 self.dense_pcd_map_bev_image_folder,
                 'dense_pcd_map_bev_image_location.json')
@@ -1133,9 +1133,13 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
             expand_local_pcd_map_image_multi, expand_local_pcd_map_image)
 
     # 旋转
+    expand_local_pcd_map_image_rotation = np.zeros(
+        (int(expand_local_pcd_map_w), int(expand_local_pcd_map_h), 3),
+        np.uint8)
     expand_center_u = local_pcd_map_edge_max
     expand_center_v = local_pcd_map_edge_max
-    angle = 180 - image.image_ego_pose_dict['attitude.z'] * 180
+    angle = 90.0 - image.image_ego_pose_dict['attitude.z'] * 180 / 3.14
+    
     # 获得旋转矩阵
     M = cv2.getRotationMatrix2D((expand_center_u, expand_center_v), angle, 1)
     # 进行仿射变换，边界填充为255，即白色，默认为0，即黑色
@@ -1144,11 +1148,34 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
         M=M,
         dsize=(int(expand_local_pcd_map_w), int(expand_local_pcd_map_h)),
         borderValue=(255, 255, 255))
+
+    # for u in range(int(expand_local_pcd_map_w)):
+    #     for v in range(int(expand_local_pcd_map_h)):
+    #         # for c in range(3):
+    #         d_u = u - expand_local_pcd_map_w / 2
+    #         d_v = v - expand_local_pcd_map_h / 2
+    #         d_u_ = d_u * np.cos(
+    #             image.image_ego_pose_dict['attitude.z']) + d_v * np.sin(
+    #                 image.image_ego_pose_dict['attitude.z'])
+    #         d_v_ = d_v * np.cos(
+    #             image.image_ego_pose_dict['attitude.z']) - d_u * np.sin(
+    #                 image.image_ego_pose_dict['attitude.z'])
+    #         u_ = int(expand_local_pcd_map_w / 2 + d_u_)
+    #         v_ = int(expand_local_pcd_map_h / 2 - d_v_)
+    #         expand_local_pcd_map_image_rotation[
+    #             u_, v_,:] = expand_local_pcd_map_image_multi[u, v,:]
+
     # show
+    # expand_local_pcd_map_image_multi_show = cv2.resize(
+    #     expand_local_pcd_map_image_multi, (800, 800))
+    # cv2.imshow('before rotation local pcd map image',
+    #             expand_local_pcd_map_image_multi_show)
+    # cv2.imwrite('/home/leidi/Desktop/1.jpg',expand_local_pcd_map_image_multi_show)
     # expand_local_pcd_map_image_rotation_show = cv2.resize(
     #     expand_local_pcd_map_image_rotation, (800, 800))
     # cv2.imshow('after rotation local pcd map image',
     #             expand_local_pcd_map_image_rotation_show)
+    # cv2.imwrite('/home/leidi/Desktop/2.jpg',expand_local_pcd_map_image_rotation_show)
     # cv2.waitKey(0)
 
     # 截取最终输出图片
