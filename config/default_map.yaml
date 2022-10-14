@@ -83,7 +83,6 @@ Lat_lon_origin_point:
 Curvature_limit:
 # attitude.z 修正偏移量+（长春偏移0.065）
 attitude_z_offset: 0.06
-# attitude_z_offset: 0.065
 # Get dense pcd map bev image
 Get_dense_pcd_map_bev_image: True
 # dense pcd map folder
@@ -94,9 +93,6 @@ Dense_pcd_map_style: mercator
 Map_style_transform: utm
 # meter_per_pixel
 Pcd_meter_per_pixel: 0.025
-# expand_local_pcd_map_image_rotation angel offset
-# Expand_local_pcd_map_image_rotation_angle_offset: 0.
-Expand_local_pcd_map_image_rotation_angle_offset: 0.157
 
 # 标注时标注图片与相机图片是否已经拼接在一起
 Camera_label_image_concat: True
