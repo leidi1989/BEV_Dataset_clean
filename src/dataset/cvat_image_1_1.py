@@ -773,7 +773,6 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     enumerate(temp_annotations_path_list_total),
                     desc='Get divid annotations',
                     leave=True):
-                # TODO set start index
                 # if index <= 85:
                 #     continue
                 # 生成空基本信息xml文件

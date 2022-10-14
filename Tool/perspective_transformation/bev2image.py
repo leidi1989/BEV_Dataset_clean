@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-08-03 14:19:20
 LastEditors: Leidi
-LastEditTime: 2022-08-08 19:39:41
+LastEditTime: 2022-10-14 11:32:06
 '''
 import argparse
 import json
@@ -184,7 +184,6 @@ if __name__ == '__main__':
                 if in_image:
                     image_bbox_points_list_dict[key].append(image_bbox_points)
 
-        # TODO 绘图
         # 获取数据集中各个摄像头图像
         each_camera_source_image_dict = {name: None for name in camera_name}
         img = cv2.imread(image.image_path)
