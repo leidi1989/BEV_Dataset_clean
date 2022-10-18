@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-09-30 15:31:58
 LastEditors: Leidi
-LastEditTime: 2022-10-09 16:20:08
+LastEditTime: 2022-10-18 13:34:27
 '''
 #!/usr/bin/python3
 # 自适应点云的坐标极值，生成对应大小的俯瞰图
@@ -20,13 +20,13 @@ def load_args():
     parser = argparse.ArgumentParser(description='pcd->pic')
     parser.add_argument('--meter_per_pixel',
                         type=float,
-                        default=0.05,
+                        default=0.025,
                         help='每个像素对应距离,单位m')
-    parser.add_argument('--pcd_dir', type=str, default='/mnt/data_1/Dataset/dataset_temp/changchun/first', help='pcd 存储文件夹路径')
-    parser.add_argument('--pic_dir', type=str, default='/mnt/data_1/Dataset/dataset_temp/changchun/firse_image/', help='pic 存储文件夹路径')
+    parser.add_argument('--pcd_dir', type=str, default='/mnt/data_2/Dataset/PCD/hefei_lukou/0', help='pcd 存储文件夹路径')
+    parser.add_argument('--pic_dir', type=str, default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/', help='pic 存储文件夹路径')
     parser.add_argument('--location_path',
                         type=str,
-                        default='/mnt/data_1/Dataset/dataset_temp/changchun/firse_image_pose/firse_image_pose.json',
+                        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/0_image_pose.json',
                         help='定位点存储文件路径')
     args = parser.parse_args()
     return args

@@ -4,14 +4,13 @@ Version:
 Author: Leidi
 Date: 2021-10-27 14:05:30
 LastEditors: Leidi
-LastEditTime: 2022-08-24 14:01:20
+LastEditTime: 2022-10-18 14:48:11
 '''
 from PIL import Image
+Image.MAX_IMAGE_PIXELS = 117613842080
 
-
-image_path = r'/home/leidi/Pictures/wuda_baishazhou@003570_id.png'
-# image_path = r'/mnt/data_2/Dataset/Autopilot_bev_dataset/others/hy_bev_wd@jsj_2hz_hq1_6v_020304050607_80_80_80_80_multi_class_20220517/0428_BEV_6V_hongqi1_wuda_jsjTols3_0506_0_0504_020465.jpg'
+image_path = r'/home/leidi/Desktop/0.png'
 
 image = Image.open(image_path)
-# image = cv2.resize(image, (1280, 720))
+image = image.resize((1280, 1280))
 image.show()
