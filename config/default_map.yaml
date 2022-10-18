@@ -58,6 +58,8 @@ Related_images: True
 
 # 是否包含地图
 Get_local_map: True
+# 是否提取osm车道线信息
+Extract_laneline_from_osm: False
 # 是否只提取地图信息
 Only_local_map: True
 # 是否删除无地图样本

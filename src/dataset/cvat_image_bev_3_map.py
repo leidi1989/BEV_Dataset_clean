@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-17 15:08:25
+LastEditTime: 2022-10-18 17:55:40
 '''
 import multiprocessing
 import os
@@ -851,20 +851,21 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             lanelet_linestringlayer = self.get_lanelet_linestringlayer()
             # osm name
             osm_file_name = ''
-            local_map_vision_box = lanelet2.core.BoundingBox2d(
-                lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
-                                           utm_y - self.utm_offset),
-                lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
-                                           utm_y + self.utm_offset))
-            for temp_osm_name, lanelet_layer in (lanelet_layers).items():
-                lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
-                if len(lanelets_inRegion):
-                    for elem in lanelets_inRegion:
-                        if lanelet2.geometry.distance(
-                                elem, lanelet2.core.BasicPoint2d(utm_x,
-                                                                 utm_y)) == 0:
-                            osm_file_name = temp_osm_name
-                            break
+            if self.extract_laneline_from_osm:
+                local_map_vision_box = lanelet2.core.BoundingBox2d(
+                    lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
+                                            utm_y - self.utm_offset),
+                    lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
+                                            utm_y + self.utm_offset))
+                for temp_osm_name, lanelet_layer in (lanelet_layers).items():
+                    lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+                    if len(lanelets_inRegion):
+                        for elem in lanelets_inRegion:
+                            if lanelet2.geometry.distance(
+                                    elem, lanelet2.core.BasicPoint2d(utm_x,
+                                                                    utm_y)) == 0:
+                                osm_file_name = temp_osm_name
+                                break
 
             # for temp_osm_name, lanelet_layer in (lanelet_linestringlayer).items():
             #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
@@ -908,40 +909,41 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
             # 获取local map
             laneline_list = []
-            linestring_inregion_src = lanelet_linestringlayer[
-                osm_file_name].search(local_map_vision_box)
-            local_map_total_line_id = []
-            for n, elem in enumerate(
-                    linestring_inregion_src):  #提取所有车道线id和点集（无重复）
-                if elem.id not in local_map_total_line_id:
-                    laneline_points_utm = []
-                    if 'roadside' in elem.attributes.keys():
-                        if elem.attributes['roadside'] == 'true':
-                            laneline_clss = 'roadside'
-                        elif elem.attributes['roadside'] == 'false':
-                            laneline_clss = 'line'
-                        for point in elem:
-                            laneline_points_utm.append([point.x, point.y])
-                        # elif 'vguideline' in elem.attributes.keys():
-                        #     pass
-                    if laneline_clss not in self.task_dict['Laneline'][
-                            'Source_dataset_class']:
-                        continue
-                    temp_laneline = LANELINE(
-                        laneline_id_in=n,
-                        laneline_clss_in=laneline_clss,
-                        laneline_points_utm_in=laneline_points_utm,
-                        utm_x=utm_x,
-                        utm_y=utm_y,
-                        att_z=self.image_ego_pose_dict[image_name_new][8] +
-                        self.attitude_z_offset,
-                        label_image_wh=self.label_image_wh,
-                        label_range=self.label_range,
-                        label_image_self_car_uv=self.label_image_self_car_uv)
-                    if 0 == len(temp_laneline.laneline_points_label_image):
-                        continue
-                    laneline_list.append(temp_laneline)
-                    local_map_total_line_id.append(elem.id)
+            if self.extract_laneline_from_osm:
+                linestring_inregion_src = lanelet_linestringlayer[
+                    osm_file_name].search(local_map_vision_box)
+                local_map_total_line_id = []
+                for n, elem in enumerate(
+                        linestring_inregion_src):  #提取所有车道线id和点集（无重复）
+                    if elem.id not in local_map_total_line_id:
+                        laneline_points_utm = []
+                        if 'roadside' in elem.attributes.keys():
+                            if elem.attributes['roadside'] == 'true':
+                                laneline_clss = 'roadside'
+                            elif elem.attributes['roadside'] == 'false':
+                                laneline_clss = 'line'
+                            for point in elem:
+                                laneline_points_utm.append([point.x, point.y])
+                            # elif 'vguideline' in elem.attributes.keys():
+                            #     pass
+                        if laneline_clss not in self.task_dict['Laneline'][
+                                'Source_dataset_class']:
+                            continue
+                        temp_laneline = LANELINE(
+                            laneline_id_in=n,
+                            laneline_clss_in=laneline_clss,
+                            laneline_points_utm_in=laneline_points_utm,
+                            utm_x=utm_x,
+                            utm_y=utm_y,
+                            att_z=self.image_ego_pose_dict[image_name_new][8] +
+                            self.attitude_z_offset,
+                            label_image_wh=self.label_image_wh,
+                            label_range=self.label_range,
+                            label_image_self_car_uv=self.label_image_self_car_uv)
+                        if 0 == len(temp_laneline.laneline_points_label_image):
+                            continue
+                        laneline_list.append(temp_laneline)
+                        local_map_total_line_id.append(elem.id)
 
         image = IMAGE(image_name, image_name_new, image_path, height, width,
                       channels, object_list, image_ego_pose, image_time_stamp,

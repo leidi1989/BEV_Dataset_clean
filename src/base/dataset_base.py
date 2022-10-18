@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-10-10 17:46:02
+LastEditTime: 2022-10-18 17:54:37
 '''
 import ftplib
 import json
@@ -141,6 +141,7 @@ class Dataset_Base:
 
         # MAP
         self.get_local_map = dataset_config['Get_local_map']
+        self.extract_laneline_from_osm = dataset_config['Extract_laneline_from_osm']
         self.delete_no_map = dataset_config['Delete_no_map']
         self.only_local_map = dataset_config['Only_local_map']
         self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']

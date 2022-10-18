@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-18 16:46:15
+LastEditTime: 2022-10-18 17:09:27
 '''
 import multiprocessing
 import shutil
@@ -18,7 +18,7 @@ from utils.utils import *
 
 import dataset
 
-Image.MAX_IMAGE_PIXELS = 117613842080
+Image.MAX_IMAGE_PIXELS = 204800000000
 
 
 class CVAT_IMAGE_1_1(Dataset_Base):
@@ -776,7 +776,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     enumerate(temp_annotations_path_list_total),
                     desc='Get divid annotations',
                     leave=True):
-                if index <= 16 or index >= 18:
+                if index <= 17 or index >= 19:
                     continue
                 # 生成空基本信息xml文件
                 annotations = dataset.__dict__[
@@ -1066,13 +1066,8 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
         temp_dense_pcd_map_path = os.path.join(
             dataset_instance.dense_pcd_map_bev_image_folder,
             temp_dense_pcd_map_dict['name'] + '.jpg')
-        # TODO 调整opencv像素上限
-        # temp_dense_pcd_map = cv2.imread(temp_dense_pcd_map_path)
-
         temp_dense_pcd_map = cv2.cvtColor(
             np.asarray(Image.open(temp_dense_pcd_map_path)), cv2.COLOR_RGB2BGR)
-
-        # temp_dense_pcd_map_pil
 
         h_scale = (temp_dense_pcd_map_dict['max_y'] -
                    image.image_ego_pose_dict['utm_position.y']) / (
