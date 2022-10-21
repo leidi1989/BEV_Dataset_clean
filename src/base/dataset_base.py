@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 11:00:30
 LastEditors: Leidi
-LastEditTime: 2022-10-18 17:54:37
+LastEditTime: 2022-10-20 15:07:00
 '''
 import ftplib
 import json
@@ -141,20 +141,21 @@ class Dataset_Base:
 
         # MAP
         self.get_local_map = dataset_config['Get_local_map']
-        self.extract_laneline_from_osm = dataset_config['Extract_laneline_from_osm']
-        self.delete_no_map = dataset_config['Delete_no_map']
-        self.only_local_map = dataset_config['Only_local_map']
-        self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
-        self.attitude_z_offset = dataset_config['attitude_z_offset']
-        self.get_dense_pcd_map_bev_image = dataset_config[
-            'Get_dense_pcd_map_bev_image']
-        self.pcd_meter_per_pixel = dataset_config['Pcd_meter_per_pixel']
-        self.dense_pcd_map_folder = dataset_config['Dense_pcd_map_folder']
-        self.dense_pcd_map_style = dataset_config['Dense_pcd_map_style']
-        self.map_type_transform_style = dataset_config['Map_style_transform']
-        self.source_dense_pcd_map_folder = check_output_path(
-            os.path.join(dataset_config['Dataset_output_folder'],
-                         'source_dense_pcds'))
+        if self.get_local_map:
+            self.extract_laneline_from_osm = dataset_config['Extract_laneline_from_osm']
+            self.delete_no_map = dataset_config['Delete_no_map']
+            self.only_local_map = dataset_config['Only_local_map']
+            self.lat_lon_origin_city = dataset_config['Lat_lon_origin_city']
+            self.attitude_z_offset = dataset_config['attitude_z_offset']
+            self.get_dense_pcd_map_bev_image = dataset_config[
+                'Get_dense_pcd_map_bev_image']
+            self.pcd_meter_per_pixel = dataset_config['Pcd_meter_per_pixel']
+            self.dense_pcd_map_folder = dataset_config['Dense_pcd_map_folder']
+            self.dense_pcd_map_style = dataset_config['Dense_pcd_map_style']
+            self.map_type_transform_style = dataset_config['Map_style_transform']
+            self.source_dense_pcd_map_folder = check_output_path(
+                os.path.join(dataset_config['Dataset_output_folder'],
+                            'source_dense_pcds'))
         # File_prefix
         self.file_prefix_delimiter = '@' if dataset_config['File_prefix_delimiter'] == '' or \
             dataset_config['File_prefix_delimiter'] is None else \
@@ -304,6 +305,7 @@ class Dataset_Base:
         self.target_annotation_output_batch_size = dataset_config[
             'Target_annotation_output_batch_size']
         self.related_images = dataset_config['Related_images']
+        self.delte_occluded_visibility = dataset_config['Delte_occluded_visibility']
 
         # 统计设置
         self.only_statistic = dataset_config['Only_statistic']

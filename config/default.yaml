@@ -11,12 +11,13 @@ Scp_to_train_server: False
 # 训练服务器ip
 Train_server_ip: "192.168.0.88"
 
-# 数据集输入路径
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchunhuandao_hq1_6v_000304050607_100_80_40_40_20220902
+# 数据集输入路径 dftc_yangsigang_wuda:90度true dongfenggaojia290度false dongfenggaojia90度false huangjinkou_wuda0度false jishuzhongxin90度false nansanhuan90度false wuda_baishazhou_dftc90度true
+# changchun:90度false changchunhuandao:90度false hzzg2hjh:90度false wd2jszx:90度
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/wd2jszx_hq1_6v_000304050607_100_80_40_40_20220607
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/changchunhuandao_hq1_6v_000304050607_100_80_40_40_20220902_20220927
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/wd2jszx_hq1_6v_000304050607_100_80_40_40_20220607_20220927
 # 重命名前缀
-File_prefix: changchunhuandao
+File_prefix: wd2jszx
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
@@ -38,6 +39,28 @@ Target_dataset_view: BEV
 # 数据集划分比例
 # (train, val, test, redund)
 Target_dataset_divide_proportion: 1,0,0,0
+
+# 是否排除遮挡
+Delte_occluded_visibility: True
+# 标注时标注图片与相机图片是否已经拼接在一起
+Camera_label_image_concat: False
+# 相机图片宽和高
+Camera_image_wh: 3200,1200
+# 标注图片宽和高
+Label_image_wh: 3200,7200
+# 标注图片宽和高
+# Label_image_wh: 3200,5600
+# 标注范围：前后左右（米）
+# Label_range: 100,40,40,40
+Label_range: 100,80,40,40
+# 调整标注范围：前后左右（米）
+Adjust_label_range: 80,40,40,40
+# 标注框旋转角度
+Label_object_rotation_angle: 90
+# 激光雷达相对于车辆后轴中心点偏移量
+Lida_to_vehicle_offset_xy:
+# 语义分割标注图片宽高
+Semantic_segmentation_label_image_wh: 512,512
 
 # 多annotation.xml输入
 Multi_annotation_xml: True
@@ -85,25 +108,6 @@ Get_dense_pcd_map_bev_image: True
 # meter_per_pixel
 Pcd_meter_per_pixel: 0.05
 
-# 标注时标注图片与相机图片是否已经拼接在一起
-Camera_label_image_concat: False
-# 相机图片宽和高
-Camera_image_wh: 3200,1200
-# 标注图片宽和高
-Label_image_wh: 3200,7200
-# 标注图片宽和高
-# Label_image_wh: 3200,5600
-# 标注范围：前后左右（米）
-# Label_range: 100,40,40,40
-Label_range: 100,80,40,40
-# 调整标注范围：前后左右（米）
-Adjust_label_range: 80,40,40,40
-# 标注框旋转角度
-Label_object_rotation_angle: 90
-# 激光雷达相对于车辆后轴中心点偏移量
-Lida_to_vehicle_offset_xy:
-# 语义分割标注图片宽高
-Semantic_segmentation_label_image_wh: 512,512
 
 # 是否仅做统计
 Only_statistic: False
@@ -121,7 +125,7 @@ Statistic_label_angle: 360
 Statistic_label_angle_statistic_segmentation: 15
 
 # 检测目标数据集标注文件
-Target_dataset_check_annotations_count: 10
+Target_dataset_check_annotations_count: 50
 # 检测目标数据集输出是否为掩码
 Target_dataset_check_annotations_output_as_mask: True
 

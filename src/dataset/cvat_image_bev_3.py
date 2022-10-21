@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-09-28 14:35:31
+LastEditTime: 2022-10-20 20:48:22
 '''
 import multiprocessing
 import shutil
@@ -275,7 +275,7 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
             # for annotation in root:
             #     if annotation.tag != 'image':
             #         continue
-            #     self.load_image_annotation(annotation,process_output)
+            #     self.load_image_annotation(annotation, process_output)
 
             success_count += process_output['success_count']
             fail_count += process_output['fail_count']
@@ -305,6 +305,8 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
         #     '.')[0] + '.' + self.temp_image_form
         image_name = str(annotation.attrib['name']).split(
             os.sep)[-1].split('.')[0] + '.' + self.temp_image_form
+        # if image_name == '002660.jpg':
+        #     print('002660.jpg')
         image_name_new = self.file_prefix + image_name
         image_path = os.path.join(self.temp_images_folder, image_name_new)
         channels = 0
@@ -325,7 +327,8 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
         if not self.camera_label_image_concat:
             height = int(annotation.attrib['height'])
         else:
-            height = int(int(annotation.attrib['height']) - self.camera_image_wh[1])
+            height = int(
+                int(annotation.attrib['height']) - self.camera_image_wh[1])
         object_list = []
         annotation_children_node = annotation.getchildren()
         # get object box head orin
@@ -346,9 +349,17 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
                 continue
             # if 'group_id' not in obj.attrib:
             #     continue
+            if obj.attrib['occluded'] == '1':
+                continue
             obj_children_node = obj.getchildren()
+
+            obj_visibility = ''
+            clss = ''
             for one_obj_children_node in obj_children_node:
-                if one_obj_children_node.attrib['name'] == 'visibility':
+                if one_obj_children_node.attrib[
+                        'name'] == 'visibility' or one_obj_children_node.attrib[
+                            'name'] == 'visibiliyt':
+                    obj_visibility = one_obj_children_node.text
                     continue
                 if one_obj_children_node.text is None:
                     object_head_point_id = None
@@ -359,6 +370,10 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
                                     one_obj_children_node.text)))
                     clss = ''.join(
                         list(filter(str.isalpha, one_obj_children_node.text)))
+                    # if clss == 'tentruck' and image_name == '001510.jpg':
+                    #     print('tentruck')
+            if obj_visibility == 'v1':
+                continue
             clss = clss.replace(' ', '').lower()
             if clss not in self.total_task_source_class_list:
                 continue

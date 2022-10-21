@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-09-30 15:31:58
 LastEditors: Leidi
-LastEditTime: 2022-10-18 13:34:27
+LastEditTime: 2022-10-21 10:33:22
 '''
 #!/usr/bin/python3
 # 自适应点云的坐标极值，生成对应大小的俯瞰图
@@ -14,6 +14,7 @@ import numpy as np
 import cv2
 import argparse
 import os
+from tqdm import tqdm
 
 
 def load_args():
@@ -22,12 +23,21 @@ def load_args():
                         type=float,
                         default=0.025,
                         help='每个像素对应距离,单位m')
-    parser.add_argument('--pcd_dir', type=str, default='/mnt/data_2/Dataset/PCD/hefei_lukou/0', help='pcd 存储文件夹路径')
-    parser.add_argument('--pic_dir', type=str, default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/', help='pic 存储文件夹路径')
-    parser.add_argument('--location_path',
+    parser.add_argument('--pcd_dir',
                         type=str,
-                        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/0_image_pose.json',
-                        help='定位点存储文件路径')
+                        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0',
+                        help='pcd 存储文件夹路径')
+    parser.add_argument(
+        '--pic_dir',
+        type=str,
+        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/',
+        help='pic 存储文件夹路径')
+    parser.add_argument(
+        '--location_path',
+        type=str,
+        default=
+        '/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/0_image_pose.json',
+        help='定位点存储文件路径')
     args = parser.parse_args()
     return args
 
@@ -46,7 +56,7 @@ def load_pcds(args):
     all_locations.append(scale)
     count = 0
 
-    for folderName, subfolders, filenames in os.walk(pcd_dir):
+    for folderName, subfolders, filenames in tqdm(os.walk(pcd_dir)):
         names = sorted(filenames)
         for filename in names:
             file_path = folderName + '/' + filename

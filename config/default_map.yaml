@@ -96,6 +96,8 @@ Map_style_transform: utm
 # meter_per_pixel
 Pcd_meter_per_pixel: 0.025
 
+# 是否排除遮挡
+Delte_occluded_visibility: True
 # 标注时标注图片与相机图片是否已经拼接在一起
 Camera_label_image_concat: True
 # 相机图片宽和高

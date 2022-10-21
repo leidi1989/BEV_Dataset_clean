@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2021-04-26 20:59:03
 LastEditors: Leidi
-LastEditTime: 2022-09-18 16:13:15
+LastEditTime: 2022-10-20 20:15:12
 '''
 # -*- coding: utf-8 -*-
 import math
@@ -143,6 +143,7 @@ def get_class_list(source_dataset_class_file_path: str) -> list:
     with open(source_dataset_class_file_path, 'r') as class_file:
         for one_line in class_file.read().splitlines():
             re_one_line = one_line.replace(' ', '').lower()
+            re_one_line = ''.join(list(filter(str.isalpha, re_one_line)))
             class_list.append(re_one_line)
 
     return class_list
@@ -165,12 +166,16 @@ def get_modify_class_dict(modify_class_file_path: str) -> dict or None:
     with open(modify_class_file_path, 'r') as class_file:
         for one_line in class_file.read().splitlines():  # 获取class修改文件内容
             one_line_list = one_line.rstrip(' ').lower().split(':')
+            one_line_list[0] = ''.join(
+                list(filter(str.isalpha, one_line_list[0])))
             one_line_list[-1] = one_line_list[-1].split(' ')  #
             # 细分类别插入修改后class类别，类别融合
             one_line_list[-1].insert(0, one_line_list[0])
             for one_class in one_line_list[1]:  # 清理列表中的空值
                 if one_class == '':
                     one_line_list[1].pop(one_line_list[1].index(one_class))
+            for one_class in one_line_list[1]:  
+                one_line_list[1][one_line_list[1].index(one_class)] = ''.join(list(filter(str.isalpha, one_class)))
             key = one_line_list[0]
             modify_class_dict[key] = one_line_list[1]  # 将新类别添加至融合类别字典
 
