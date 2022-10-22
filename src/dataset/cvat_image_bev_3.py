@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-22 11:00:34
+LastEditTime: 2022-10-22 13:20:34
 '''
 import multiprocessing
 import shutil
@@ -119,114 +119,79 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
     def draw_mask(self, ann_img):
         if self.annotation_car == 'hq1':
             # 给红旗1数据加mask
-            pts = np.array(
-                [[[2851.58, 1200], [2929.35, 1169.51], [3050.25, 1145.83],
-                  [3088.43, 1049.67], [3116.36, 1013.61], [3123.43, 1007.25],
-                  [3143.58, 994.52], [3197.67, 927.00], [3199.43, 1200],
-                  [2853.34, 1200]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array([[[0, 1028.33], [21.59, 1054.00], [51.05, 1071.38],
-                             [93.76, 1125.00], [107.02, 1155.64],
-                             [293.85, 1200], [1.32, 1200], [0, 1090.86]]],
-                           np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[2898.67, 600], [3161.83, 490.60], [3198.49, 341.79],
-                  [3198.49, 600], [2900.87, 600]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[2133, 347.36], [2188.71, 365.69], [2242.95, 469.05],
-                  [2282.54, 600.26], [2133, 600.26], [2133, 350.29]]],
+            # left front
+            pts_0_0 = np.array(
+                [[0, 0], [22, 0], [49, 342], [81, 505], [325, 599], [0, 599]],
                 np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[1066, 565.81], [1114.79, 557.01], [1232.81, 548.95],
-                  [1540.69, 556.28], [1539.96, 498.37], [1556.82, 467.58],
-                  [1822.18, 463.18], [1870.56, 491.04], [1870.56, 548.95],
-                  [2019.37, 543.08], [2133.00, 531.36], [2133, 600],
-                  [1066, 600], [1066, 568.01]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[861.15, 600], [911.00, 436.79], [968.18, 345.89],
-                  [1010.70, 338.56], [1028.29, 326.83], [1066.41, 331.23],
-                  [1064.94, 600], [864.82, 600]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[0, 0], [22.40, 0], [49.52, 342.01], [81.78, 505.48],
-                  [325.15, 600], [0, 600], [0, 271.16]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array([[[1893.17, 546.85], [2133.50, 526.10],
-                             [2133.69, 549.58], [1893.35, 548.13]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[1129.20, 556.10], [1207.11, 549.80], [1249.32, 547.71],
-                  [1413.71, 552.69], [1495.25, 554.26], [1517.54, 556.36],
-                  [1129.80, 557.10]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts_0_1 = np.array(
+                [[861, 599], [911, 436.79], [968, 345], [1010, 338],
+                 [1028, 326], [1065, 331], [1065, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_0_0, pts_0_1], (0, 0, 0), 1, 0)
+
+            # front center
+            pts_1_0 = np.array(
+                [[1066, 565], [1124, 556], [1232, 548], [1387, 555],
+                 [1425, 558], [1530, 553], [1530, 505], [1551, 470], 
+                 [1831, 466], [1878, 496], [1878, 547], [1921, 547],
+                 [2131, 531], [2131, 599], [1066, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_1_0], (0, 0, 0), 1, 0)
+
+            # right front
+            pts_2_0 = np.array(
+                [[2132, 346], [2158, 360], [2172, 360], [2186, 363],
+                 [2210, 375], [2230, 409], [2245, 473], [2286, 599], [2132, 599]], np.int32)
+            pts_2_1 = np.array(
+                [[2884, 599], [3156, 485], [3199, 310], [3199, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_2_0, pts_2_1], (0, 0, 0), 1, 0)
+
+            # left back
+            pts_3_0 = np.array([[0, 1028], [21, 1054], [51, 1071], [93, 1125],
+                                [107, 1155], [293, 1199], [0, 1199]], np.int32)
+            cv2.fillPoly(ann_img, [pts_3_0], (0, 0, 0), 1, 0)
+
+            # right back
+            pts_5_0 = np.array(
+                [[2840, 1199], [2966, 1159], [3048, 1137], [3086, 1049],
+                 [3137, 994], [3199, 928], [3199, 1199]], np.int32)
+            cv2.fillPoly(ann_img, [pts_5_0], (0, 0, 0), 1, 0)
+            
         # TODO new mask
         if self.annotation_car == 'hq1_no_300':
             # 给红旗1数据加h1_mask_new_mask
-            pts = np.array(
-                [[[2900, 1200], [3015, 1159], [3048, 1092],
-                  [3079, 1057], [3115, 1029], [3199, 938], [3199.43, 1200],
-                  [2853.34, 1200]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array([[[0, 1028.33], [21.59, 1054.00], [51.05, 1071.38],
-                             [93.76, 1125.00], [107.02, 1155.64],
-                             [293.85, 1200], [1.32, 1200], [0, 1090.86]]],
-                           np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[2898.67, 600], [3154, 482], [3198.49, 341.79],
-                  [3198.49, 600], [2900.87, 600]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[2133, 346], [2158, 344], [2172, 360], [2186, 388], [2212, 438],
-                  [2272, 600], [2133, 600], [2133, 350.29]]],
+            # left front
+            pts_0_0 = np.array(
+                [[0, 0], [22, 0], [49, 342], [81, 505], [325, 599], [0, 599]],
                 np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts_0_1 = np.array(
+                [[861, 599], [911, 436.79], [968, 345], [1010, 338],
+                 [1028, 326], [1065, 331], [1065, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_0_0, pts_0_1], (0, 0, 0), 1, 0)
+
             # front center
-            pts = np.array(
-                [[[1066, 565], [1124, 556], [1232.81, 552], [1310, 555],
-                  [1425, 558], [1558, 556], [1676, 549], [1921, 547],
-                  [2131, 531], [2133.00, 531.36], [2133, 600], [1066, 600],
-                  [1066, 568.01]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[861.15, 600], [911.00, 436.79], [968.18, 345.89],
-                  [1010.70, 338.56], [1028.29, 326.83], [1066.41, 331.23],
-                  [1064.94, 600], [864.82, 600]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[0, 0], [22.40, 0], [49.52, 342.01], [81.78, 505.48],
-                  [325.15, 600], [0, 600], [0, 271.16]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array([[[1893.17, 546.85], [2133.50, 526.10],
-                             [2133.69, 549.58], [1893.35, 548.13]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
-            pts = np.array(
-                [[[1129.20, 556.10], [1207.11, 549.80], [1249.32, 547.71],
-                  [1413.71, 552.69], [1495.25, 554.26], [1517.54, 556.36],
-                  [1129.80, 557.10]]], np.int32)
-            pts = pts.reshape((-1, 1, 2))
-            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts_1_0 = np.array(
+                [[1066, 565], [1124, 556], [1232, 548], [1387, 555],
+                 [1425, 558], [1558, 556], [1676, 549], [1921, 547],
+                 [2131, 531], [2131, 599], [1066, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_1_0], (0, 0, 0), 1, 0)
+
+            # right front
+            pts_2_0 = np.array(
+                [[2132, 346], [2158, 344], [2172, 360], [2186, 388],
+                 [2212, 438], [2272, 599], [2132, 599]], np.int32)
+            pts_2_1 = np.array(
+                [[2898, 599], [3154, 482], [3199, 341], [3199, 599]], np.int32)
+            cv2.fillPoly(ann_img, [pts_2_0, pts_2_1], (0, 0, 0), 1, 0)
+
+            # left back
+            pts_3_0 = np.array([[0, 1028], [21, 1054], [51, 1071], [93, 1125],
+                                [107, 1155], [293, 1199], [0, 1199]], np.int32)
+            cv2.fillPoly(ann_img, [pts_3_0], (0, 0, 0), 1, 0)
+
+            # right back
+            pts_5_0 = np.array(
+                [[2900, 1199], [3015, 1159], [3048, 1092], [3079, 1057],
+                 [3115, 1029], [3199, 938], [3199, 1199]], np.int32)
+            cv2.fillPoly(ann_img, [pts_5_0], (0, 0, 0), 1, 0)
 
         return ann_img
 
@@ -427,7 +392,7 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
                         list(filter(str.isalpha, one_obj_children_node.text)))
                     # if clss == 'tentruck' and image_name == '001510.jpg':
                     #     print('tentruck')
-            if obj_visibility == 'v1':
+            if obj_visibility == 'v1' and obj.attrib['occluded'] == '1':
                 continue
             clss = clss.replace(' ', '').lower()
             if clss not in self.total_task_source_class_list:
