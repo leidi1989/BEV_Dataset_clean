@@ -13,11 +13,11 @@ Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径 dftc_yangsigang_wuda:90度true dongfenggaojia290度false dongfenggaojia90度false huangjinkou_wuda0度false jishuzhongxin90度false nansanhuan90度false wuda_baishazhou_dftc90度true
 # changchun:90度false changchunhuandao:90度false hzzg2hjh:90度false wd2jszx:90度
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/wd2jszx_hq1_6v_000304050607_100_80_40_40_20220607
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/wd2jszx_hq1_6v_000304050607_100_80_40_40_20220607_20220927
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_no_300_hq1_6v_000304050607_100_80_40_40_20220901_20220927
 # 重命名前缀
-File_prefix: wd2jszx
+File_prefix: changchun
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
@@ -32,8 +32,8 @@ Source_dataset_style: CVAT_IMAGE_BEV_3
 # NUSCENES, PYVA, CVT, HY_BEV, HDMAPNET
 # COCO2017, CITYSCAPES, CITYSCAPES_VAL, CVAT_IMAGE_1_1, YOLO
 Target_dataset_style: PYVA
-# 标注车型（hq1, hq2, lt1, lt2）
-Annotation_car: hq1
+# 标注车型, 添加对应mask（hq1, hq2, lt1, lt2, hq1_no_300）
+Annotation_car: hq1_no_300
 # 目标数据集视角（perspective, BEV）:
 Target_dataset_view: BEV
 # 数据集划分比例

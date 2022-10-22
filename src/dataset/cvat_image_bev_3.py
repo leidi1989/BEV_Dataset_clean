@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-20 20:48:22
+LastEditTime: 2022-10-22 10:54:00
 '''
 import multiprocessing
 import shutil
@@ -149,6 +149,61 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
                   [1822.18, 463.18], [1870.56, 491.04], [1870.56, 548.95],
                   [2019.37, 543.08], [2133.00, 531.36], [2133, 600],
                   [1066, 600], [1066, 568.01]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array(
+                [[[861.15, 600], [911.00, 436.79], [968.18, 345.89],
+                  [1010.70, 338.56], [1028.29, 326.83], [1066.41, 331.23],
+                  [1064.94, 600], [864.82, 600]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array(
+                [[[0, 0], [22.40, 0], [49.52, 342.01], [81.78, 505.48],
+                  [325.15, 600], [0, 600], [0, 271.16]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array([[[1893.17, 546.85], [2133.50, 526.10],
+                             [2133.69, 549.58], [1893.35, 548.13]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array(
+                [[[1129.20, 556.10], [1207.11, 549.80], [1249.32, 547.71],
+                  [1413.71, 552.69], [1495.25, 554.26], [1517.54, 556.36],
+                  [1129.80, 557.10]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+        # TODO new mask
+        if self.annotation_car == 'hq1_no_300':
+            # 给红旗1数据加h1_mask_new_mask
+            pts = np.array(
+                [[[2900, 1200], [3015, 1159], [3048, 1092],
+                  [3079, 1057], [3115, 1029], [3199, 938], [3199.43, 1200],
+                  [2853.34, 1200]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array([[[0, 1028.33], [21.59, 1054.00], [51.05, 1071.38],
+                             [93.76, 1125.00], [107.02, 1155.64],
+                             [293.85, 1200], [1.32, 1200], [0, 1090.86]]],
+                           np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array(
+                [[[2898.67, 600], [3154, 482], [3198.49, 341.79],
+                  [3198.49, 600], [2900.87, 600]]], np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            pts = np.array(
+                [[[2133, 347.36], [2188.71, 365.69], [2242.95, 469.05],
+                  [2282.54, 600.26], [2133, 600.26], [2133, 350.29]]],
+                np.int32)
+            pts = pts.reshape((-1, 1, 2))
+            ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
+            # front center
+            pts = np.array(
+                [[[1066, 565], [1124, 556], [1232.81, 552], [1310, 555],
+                  [1425, 558], [1558, 556], [1676, 549], [1921, 547],
+                  [2131, 531], [2133.00, 531.36], [2133, 600], [1066, 600],
+                  [1066, 568.01]]], np.int32)
             pts = pts.reshape((-1, 1, 2))
             ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
             pts = np.array(

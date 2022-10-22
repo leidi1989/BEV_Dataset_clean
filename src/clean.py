@@ -5,7 +5,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-10-20 18:54:26
+LastEditTime: 2022-10-22 10:37:49
 '''
 import argparse
 import time
@@ -24,7 +24,7 @@ def clean(dataset_config: dict) -> None:
 
     Input_dataset = dataset.__dict__[dataset_config['Source_dataset_style']](
         dataset_config)
-    # Input_dataset.source_dataset_copy_image_and_annotation()
+    Input_dataset.source_dataset_copy_image_and_annotation()
     # if Input_dataset.get_dense_pcd_map_bev_image:
     #     Input_dataset.create_dense_pcd_map_bev_image()
     Input_dataset.transform_to_temp_dataset()
