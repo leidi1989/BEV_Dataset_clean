@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-22 10:54:00
+LastEditTime: 2022-10-22 11:00:34
 '''
 import multiprocessing
 import shutil
@@ -193,8 +193,8 @@ class CVAT_IMAGE_BEV_3(Dataset_Base):
             pts = pts.reshape((-1, 1, 2))
             ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
             pts = np.array(
-                [[[2133, 347.36], [2188.71, 365.69], [2242.95, 469.05],
-                  [2282.54, 600.26], [2133, 600.26], [2133, 350.29]]],
+                [[[2133, 346], [2158, 344], [2172, 360], [2186, 388], [2212, 438],
+                  [2272, 600], [2133, 600], [2133, 350.29]]],
                 np.int32)
             pts = pts.reshape((-1, 1, 2))
             ann_img = cv2.fillConvexPoly(ann_img, pts, (0, 0, 0))
