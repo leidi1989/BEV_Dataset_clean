@@ -13,11 +13,11 @@ Train_server_ip: "192.168.0.88"
 
 # 数据集输入路径 dftc_yangsigang_wuda:90度true dongfenggaojia290度false dongfenggaojia90度false huangjinkou_wuda0度false jishuzhongxin90度false nansanhuan90度false wuda_baishazhou_dftc90度true
 # changchun:90度false changchunhuandao:90度false hzzg2hjh:90度false wd2jszx:90度false
-Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/hzzg2hjh_hq1_6v_000304050607_100_80_40_40_20220721
+Dataset_input_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901
 # 数据集输出路径
-Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/hzzg2hjh_hq1_6v_000304050607_100_80_40_40_20220721_20220927
+Dataset_output_folder: /mnt/data_2/Dataset/Autopilot_bev_dataset/relabel_raw_data_20220926/after_camera_fix/changchun_hq1_6v_000304050607_100_80_40_40_20220901_20220927
 # 重命名前缀
-File_prefix: hzzg2hjh
+File_prefix: changchun
 # name delimiter(cityscapes need: "@")
 File_prefix_delimiter: "@"
 
@@ -136,8 +136,8 @@ Need_convert:
 # Detection, Semantic_segmentation, Instance_segmentation, Keypoints
 Task_and_class_config:
   Detection:
-    Source_dataset_class_file_path: data/class/bev/hy_bev_62_classes_20220930.name
-    Modify_class_file_path: data/class/bev/hy_bev_62_to_2_classes_20220930.txt
+    Source_dataset_class_file_path: data/class/bev/hy_bev_62_classes_20221024.name
+    Modify_class_file_path: data/class/bev/hy_bev_62_to_2_classes_20221024.txt
     Target_each_class_object_pixel_limit_file_path:
   # Semantic_segmentation:
   #   Source_dataset_class_file_path: Clean_up/data/auto_annotation/TI_edgeailite_auto_annotation_yunce_parking_6_classes.names
