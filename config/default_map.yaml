@@ -65,7 +65,7 @@ Extract_laneline_from_osm: False
 # 是否只提取地图信息
 Only_local_map: True
 # 是否删除无地图样本
-Delete_no_map: True
+Delete_no_map: False
 # lat_lon_origin城市
 # Lat_lon_origin_city: wuhan
 Lat_lon_origin_city: changchun

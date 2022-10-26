@@ -4,12 +4,9 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-26 15:02:19
+LastEditTime: 2022-10-26 16:32:41
 '''
-from ast import Delete
 import multiprocessing
-import re
-from selectors import EpollSelector
 import shutil
 import xml.etree.ElementTree as ET
 import zipfile
@@ -785,8 +782,9 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     enumerate(temp_annotations_path_list_total),
                     desc='Get divid annotations',
                     leave=True):
-                if index <= 13 or index >= 17:
-                    continue
+                # TODO if index <= 13 or index >= 17:
+                # if index <= 13 or index >= 17:
+                #     continue
                 # 生成空基本信息xml文件
                 annotations = dataset.__dict__[
                     dataset_instance.

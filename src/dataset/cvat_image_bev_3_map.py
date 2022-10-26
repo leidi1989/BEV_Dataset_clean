@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-26 13:58:11
+LastEditTime: 2022-10-26 17:54:01
 '''
 import multiprocessing
 import os
@@ -43,8 +43,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         self.source_dataset_time_folder = check_output_path(
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_times'))
         self.dense_pcd_map_bev_trace_image_folder = check_output_path(
-                os.path.join(opt['Dataset_output_folder'],
-                             'dense_pcd_map_bev_trace_images'))
+            os.path.join(opt['Dataset_output_folder'],
+                         'dense_pcd_map_bev_trace_images'))
         self.source_dataset_image_form_list = ['jpg', 'png']
         self.source_dataset_annotation_image_form = 'jpg'
         self.source_dataset_annotation_form = 'xml'
@@ -478,7 +478,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     desc='Create dense pcd map bev image',
                     leave=True):
                 names = sorted(filenames)
-                pool = multiprocessing.Pool(self.workers if 1== self.workers else 4)
+                pool = multiprocessing.Pool(self.workers if 1 ==
+                                            self.workers else 4)
                 pbar, update = multiprocessing_list_tqdm(names,
                                                          desc='Total pcd',
                                                          leave=False)
@@ -490,12 +491,12 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                     # cloud_mercator_2_utm_map(pcd_input_path, pcd_output_path, mercator, origin_utm)
                     if self.map_type_transform_style == 'utm':
                         pool.apply_async(func=self.cloud_mercator_2_utm_map,
-                                        args=(
-                                            pcd_input_path,
-                                            pcd_output_path,
-                                        ),
-                                        callback=update,
-                                        error_callback=err_call_back)
+                                         args=(
+                                             pcd_input_path,
+                                             pcd_output_path,
+                                         ),
+                                         callback=update,
+                                         error_callback=err_call_back)
 
                 pool.close()
                 pool.join()
@@ -504,7 +505,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         all_locations = []
 
         names = sorted(os.listdir(self.source_dense_pcd_map_folder))
-        pool = multiprocessing.Pool(self.workers if 1== self.workers else 4)
+        pool = multiprocessing.Pool(self.workers if 1 == self.workers else 4)
         pbar, update = multiprocessing_list_tqdm(names,
                                                  desc='Total images',
                                                  leave=False)
@@ -589,7 +590,7 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
         Returns:
             dict: 地图像素与坐标关系信息
         """
-        
+
         file_path = os.path.join(self.source_dense_pcd_map_folder, filename)
         pic_name = filename.split('.')[0]
         pic_path = os.path.join(pic_dir, pic_name + '.jpg')
@@ -857,16 +858,18 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             if self.extract_laneline_from_osm:
                 local_map_vision_box = lanelet2.core.BoundingBox2d(
                     lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
-                                            utm_y - self.utm_offset),
+                                               utm_y - self.utm_offset),
                     lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
-                                            utm_y + self.utm_offset))
+                                               utm_y + self.utm_offset))
                 for temp_osm_name, lanelet_layer in (lanelet_layers).items():
-                    lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+                    lanelets_inRegion = lanelet_layer.search(
+                        local_map_vision_box)
                     if len(lanelets_inRegion):
                         for elem in lanelets_inRegion:
                             if lanelet2.geometry.distance(
-                                    elem, lanelet2.core.BasicPoint2d(utm_x,
-                                                                    utm_y)) == 0:
+                                    elem,
+                                    lanelet2.core.BasicPoint2d(utm_x,
+                                                               utm_y)) == 0:
                                 osm_file_name = temp_osm_name
                                 break
 
@@ -942,7 +945,8 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                             self.attitude_z_offset,
                             label_image_wh=self.label_image_wh,
                             label_range=self.label_range,
-                            label_image_self_car_uv=self.label_image_self_car_uv)
+                            label_image_self_car_uv=self.
+                            label_image_self_car_uv)
                         if 0 == len(temp_laneline.laneline_points_label_image):
                             continue
                         laneline_list.append(temp_laneline)
@@ -1037,15 +1041,22 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
                                        utm_y - self.utm_offset),
             lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
                                        utm_y + self.utm_offset))
-        for temp_osm_name, lanelet_layer in (lanelet_layers).items():
+
+        for temp_osm_name, lanelet_layer in lanelet_linestringlayer.items():
             lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
-            if len(lanelets_inRegion):
-                for elem in lanelets_inRegion:
-                    if lanelet2.geometry.distance(
-                            elem, lanelet2.core.BasicPoint2d(utm_x,
-                                                             utm_y)) == 0:
-                        osm_file_name = temp_osm_name
-                        break
+            if len(lanelets_inRegion) > 0:
+                osm_file_name = temp_osm_name
+                break
+
+        # for temp_osm_name, lanelet_layer in (lanelet_layers).items():
+        #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
+        #     if len(lanelets_inRegion):
+        #         for elem in lanelets_inRegion:
+        #             if lanelet2.geometry.distance(
+        #                     elem, lanelet2.core.BasicPoint2d(utm_x,
+        #                                                      utm_y)) == 0:
+        #                 osm_file_name = temp_osm_name
+        #                 break
 
         # for temp_osm_name, lanelet_layer in (lanelet_linestringlayer).items():
         #     lanelets_inRegion = lanelet_layer.search(local_map_vision_box)
@@ -1059,7 +1070,6 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
 
         if osm_file_name == '':
             print('Do not find osm file name!')
-            return
 
         image_ego_pose = {
             "latitude": self.image_ego_pose_dict[image_name_new][0],

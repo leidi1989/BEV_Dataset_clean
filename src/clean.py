@@ -5,7 +5,7 @@ Version:
 Author: Leidi
 Date: 2021-08-04 16:45:50
 LastEditors: Leidi
-LastEditTime: 2022-10-26 15:20:09
+LastEditTime: 2022-10-26 17:58:46
 '''
 import argparse
 import time
@@ -27,7 +27,7 @@ def clean(dataset_config: dict) -> None:
     # Input_dataset.source_dataset_copy_image_and_annotation()
     # if Input_dataset.get_dense_pcd_map_bev_image:
     #     Input_dataset.create_dense_pcd_map_bev_image()
-    # Input_dataset.transform_to_temp_dataset()
+    Input_dataset.transform_to_temp_dataset()
     # Input_dataset.output_classname_file()
     # if not Input_dataset.only_statistic:
     #     Input_dataset.delete_redundant_image_annotation()
@@ -39,9 +39,9 @@ def clean(dataset_config: dict) -> None:
 
     if not Input_dataset.only_statistic:
         # 输出并检测指定形式数据集
-        # dataset.__dict__[dataset_config[
-        #     'Target_dataset_style']].target_dataset(Input_dataset)
-        # Input_dataset.target_dataset_annotation_check()
+        dataset.__dict__[dataset_config[
+            'Target_dataset_style']].target_dataset(Input_dataset)
+        Input_dataset.target_dataset_annotation_check()
 
         # 生成指定形式数据集组织结构
         dataset.__dict__[dataset_config[
