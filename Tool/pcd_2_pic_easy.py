@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-09-30 15:31:58
 LastEditors: Leidi
-LastEditTime: 2022-10-21 10:33:22
+LastEditTime: 2022-10-25 14:36:49
 '''
 #!/usr/bin/python3
 # 自适应点云的坐标极值，生成对应大小的俯瞰图
@@ -25,18 +25,18 @@ def load_args():
                         help='每个像素对应距离,单位m')
     parser.add_argument('--pcd_dir',
                         type=str,
-                        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0',
+                        default='/mnt/data_2/Dataset/PCD/hefei_lukou/new/pcd/',
                         help='pcd 存储文件夹路径')
     parser.add_argument(
         '--pic_dir',
         type=str,
-        default='/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/',
+        default='/mnt/data_2/Dataset/PCD/hefei_lukou/new/image/',
         help='pic 存储文件夹路径')
     parser.add_argument(
         '--location_path',
         type=str,
         default=
-        '/mnt/data_2/Dataset/PCD/hefei_lukou/0_bev_image/0_image_pose.json',
+        '/mnt/data_2/Dataset/PCD/hefei_lukou/new/image/image_pose.json',
         help='定位点存储文件路径')
     args = parser.parse_args()
     return args

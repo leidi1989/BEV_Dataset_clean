@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-18 17:55:40
+LastEditTime: 2022-10-26 13:58:11
 '''
 import multiprocessing
 import os
@@ -42,6 +42,9 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_poses'))
         self.source_dataset_time_folder = check_output_path(
             os.path.join(opt['Dataset_output_folder'], 'source_dataset_times'))
+        self.dense_pcd_map_bev_trace_image_folder = check_output_path(
+                os.path.join(opt['Dataset_output_folder'],
+                             'dense_pcd_map_bev_trace_images'))
         self.source_dataset_image_form_list = ['jpg', 'png']
         self.source_dataset_annotation_image_form = 'jpg'
         self.source_dataset_annotation_form = 'xml'

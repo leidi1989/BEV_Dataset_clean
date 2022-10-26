@@ -4,9 +4,12 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-18 17:09:27
+LastEditTime: 2022-10-26 14:12:01
 '''
+from ast import Delete
 import multiprocessing
+import re
+from selectors import EpollSelector
 import shutil
 import xml.etree.ElementTree as ET
 import zipfile
@@ -15,6 +18,7 @@ from base.dataset_base import Dataset_Base
 from base.image_base import *
 from PIL import Image
 from utils.utils import *
+import imagesize
 
 import dataset
 
@@ -35,6 +39,9 @@ class CVAT_IMAGE_1_1(Dataset_Base):
             self.dense_pcd_map_bev_image_folder = check_output_path(
                 os.path.join(opt['Dataset_output_folder'],
                              'dense_pcd_map_bev_images'))
+            self.dense_pcd_map_bev_trace_image_folder = check_output_path(
+                os.path.join(opt['Dataset_output_folder'],
+                             'dense_pcd_map_bev_trace_images'))
             dense_pcd_map_bev_image_path = os.path.join(
                 self.dense_pcd_map_bev_image_folder,
                 'dense_pcd_map_bev_image_location.json')
@@ -776,8 +783,8 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                     enumerate(temp_annotations_path_list_total),
                     desc='Get divid annotations',
                     leave=True):
-                if index <= 17 or index >= 19:
-                    continue
+                # if index <= 17 or index >= 19:
+                #     continue
                 # 生成空基本信息xml文件
                 annotations = dataset.__dict__[
                     dataset_instance.
@@ -847,6 +854,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
 
                     # 是否使用稠密点云地图进行标注
                     if dataset_instance.get_dense_pcd_map_bev_image:
+                        dataset_instance.each_map_self_local = {}
                         for annotation_image_input_path in tqdm(
                                 annotation_image_list,
                                 desc='Get dense map bev image',
@@ -867,7 +875,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             image = dataset_instance.TEMP_LOAD(
                                 dataset_instance, temp_annotation_path)
                             image_dense_map_id = []
-
+                            # 判断图片出现在哪些稠密点云bev图中
                             for dense_map_dict in dataset_instance.dense_pcd_map_location_dict_list:
                                 if 'meter_per_pixel' in dense_map_dict:
                                     continue
@@ -879,60 +887,108 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                                         'max_y']:
                                     image_dense_map_id.append(
                                         dense_map_dict['name'])
+
                             if len(image_dense_map_id) == 0:
                                 continue
-                            get_dense_map_bev_image(
-                                dataset_instance, image, image_dense_map_id,
-                                annotation_image_output_path)
-                    # if dataset_instance.get_dense_pcd_map_bev_image:
-                    #     pbar, update = multiprocessing_list_tqdm(
-                    #         annotation_image_list,
-                    #         desc='Create annotation images',
-                    #         leave=False)
-                    #     pool = multiprocessing.Pool(dataset_instance.workers)
-                    #     for annotation_image_input_path in annotation_image_list:
-                    #         annotation_image_name = annotation_image_input_path.split(
-                    #             os.sep)[-1]
-                    #         temp_annotation_name = annotation_image_name.replace(
-                    #             dataset_instance.
-                    #             source_dataset_annotation_image_form,
-                    #             dataset_instance.temp_annotation_form)
-                    #         temp_annotation_path = os.path.join(
-                    #             dataset_instance.temp_annotations_folder,
-                    #             temp_annotation_name)
-                    #         annotation_image_output_path = annotation_image_input_path.replace(
-                    #             dataset_instance.
-                    #             source_dataset_annotation_image_folder,
-                    #             related_image_output_folder)
-                    #         image = dataset_instance.TEMP_LOAD(
-                    #             dataset_instance, temp_annotation_path)
-                    #         image_dense_map_id = []
 
-                    #         for dense_map_dict in dataset_instance.dense_pcd_map_location_dict_list:
-                    #             if 'meter_per_pixel' in dense_map_dict:
-                    #                 continue
-                    #             if dense_map_dict['min_x'] <= image.image_ego_pose_dict[
-                    #                     'utm_position.x'] <= dense_map_dict[
-                    #                         'max_x'] and dense_map_dict[
-                    #                             'min_y'] <= image.image_ego_pose_dict[
-                    #                                 'utm_position.y'] <= dense_map_dict[
-                    #                                     'max_y']:
-                    #                 image_dense_map_id.append(
-                    #                     dense_map_dict['name'])
-                    #         if len(image_dense_map_id) == 0:
-                    #             continue
-                    #         pool.apply_async(func=get_dense_map_bev_image,
-                    #                          args=(
-                    #                              dataset_instance,
-                    #                              image,
-                    #                              image_dense_map_id,
-                    #                              annotation_image_output_path,
-                    #                          ),
-                    #                          callback=update,
-                    #                          error_callback=err_call_back)
-                    #     pool.close()
-                    #     pool.join()
-                    #     pbar.close()
+                            if dataset_instance.sequence_label:
+                                # 连续帧标注
+                                for id in image_dense_map_id:
+                                    temp_dense_pcd_map_dict = dataset_instance.dense_pcd_map_location_total_dict[
+                                        id]
+                                    temp_dense_pcd_map_path = os.path.join(
+                                        dataset_instance.
+                                        dense_pcd_map_bev_image_folder,
+                                        temp_dense_pcd_map_dict['name'] +
+                                        '.jpg')
+                                    temp_dense_pcd_map_wh = imagesize.get(
+                                        temp_dense_pcd_map_path)
+                                    h_scale = (
+                                        temp_dense_pcd_map_dict['max_y'] -
+                                        image.
+                                        image_ego_pose_dict['utm_position.y']
+                                    ) / (temp_dense_pcd_map_dict['max_y'] -
+                                         temp_dense_pcd_map_dict['min_y'])
+                                    w_scale = (
+                                        image.
+                                        image_ego_pose_dict['utm_position.x'] -
+                                        temp_dense_pcd_map_dict['min_x']) / (
+                                            temp_dense_pcd_map_dict['max_x'] -
+                                            temp_dense_pcd_map_dict['min_x'])
+                                    self_local_u = int(
+                                        temp_dense_pcd_map_wh[0] * w_scale)
+                                    self_local_v = int(
+                                        temp_dense_pcd_map_wh[1] * h_scale)
+                                    self_local_uv = [
+                                        self_local_u, self_local_v
+                                    ]
+                                    if temp_dense_pcd_map_dict[
+                                            'name'] not in dataset_instance.each_map_self_local:
+                                        dataset_instance.each_map_self_local.update(
+                                            {
+                                                temp_dense_pcd_map_dict['name']:
+                                                [self_local_uv]
+                                            })
+                                    else:
+                                        dataset_instance.each_map_self_local[
+                                            temp_dense_pcd_map_dict[
+                                                'name']].append(self_local_uv)
+                            else:
+                                # 逐帧标注
+                                get_dense_map_bev_image(
+                                    dataset_instance, image,
+                                    image_dense_map_id,
+                                    annotation_image_output_path)
+
+                        # if dataset_instance.get_dense_pcd_map_bev_image:
+                        #     pbar, update = multiprocessing_list_tqdm(
+                        #         annotation_image_list,
+                        #         desc='Create annotation images',
+                        #         leave=False)
+                        #     pool = multiprocessing.Pool(dataset_instance.workers)
+                        #     for annotation_image_input_path in annotation_image_list:
+                        #         annotation_image_name = annotation_image_input_path.split(
+                        #             os.sep)[-1]
+                        #         temp_annotation_name = annotation_image_name.replace(
+                        #             dataset_instance.
+                        #             source_dataset_annotation_image_form,
+                        #             dataset_instance.temp_annotation_form)
+                        #         temp_annotation_path = os.path.join(
+                        #             dataset_instance.temp_annotations_folder,
+                        #             temp_annotation_name)
+                        #         annotation_image_output_path = annotation_image_input_path.replace(
+                        #             dataset_instance.
+                        #             source_dataset_annotation_image_folder,
+                        #             related_image_output_folder)
+                        #         image = dataset_instance.TEMP_LOAD(
+                        #             dataset_instance, temp_annotation_path)
+                        #         image_dense_map_id = []
+
+                        #         for dense_map_dict in dataset_instance.dense_pcd_map_location_dict_list:
+                        #             if 'meter_per_pixel' in dense_map_dict:
+                        #                 continue
+                        #             if dense_map_dict['min_x'] <= image.image_ego_pose_dict[
+                        #                     'utm_position.x'] <= dense_map_dict[
+                        #                         'max_x'] and dense_map_dict[
+                        #                             'min_y'] <= image.image_ego_pose_dict[
+                        #                                 'utm_position.y'] <= dense_map_dict[
+                        #                                     'max_y']:
+                        #                 image_dense_map_id.append(
+                        #                     dense_map_dict['name'])
+                        #         if len(image_dense_map_id) == 0:
+                        #             continue
+                        #         pool.apply_async(func=get_dense_map_bev_image,
+                        #                          args=(
+                        #                              dataset_instance,
+                        #                              image,
+                        #                              image_dense_map_id,
+                        #                              annotation_image_output_path,
+                        #                          ),
+                        #                          callback=update,
+                        #                          error_callback=err_call_back)
+                        #     pool.close()
+                        #     pool.join()
+                        #     pbar.close()
                     else:
                         pbar, update = multiprocessing_list_tqdm(
                             annotation_image_list,
@@ -960,7 +1016,7 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                         pbar.close()
 
                     # copy related images
-                    if dataset_instance.related_images:
+                    if dataset_instance.related_images and not dataset_instance.sequence_label:
                         related_image_list = []
                         related_image_output_folder = check_output_path(
                             os.path.join(output_root, str(index),
@@ -1019,6 +1075,33 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                             zipf.write(pathfile, arcname)
                     zipf.close()
 
+            # 记录 each_map_self_local
+            each_map_self_local_output_path = os.path.join(
+                dataset_instance.temp_informations_folder,
+                'each_map_self_local.json')
+            # 验证取点
+            for key, value in dataset_instance.each_map_self_local.items():
+                temp_dense_pcd_map_path = os.path.join(
+                    dataset_instance.dense_pcd_map_bev_image_folder,
+                    key + '.jpg')
+                temp_dense_pcd_map = cv2.cvtColor(
+                    np.asarray(Image.open(temp_dense_pcd_map_path)),
+                    cv2.COLOR_RGB2BGR)
+                for point_uv in value:
+                    cv2.circle(temp_dense_pcd_map,
+                                (point_uv[0], point_uv[1]), 20, (0, 0, 255),
+                                -1)
+                temp_dense_pcd_map_trace_output_path = os.path.join(
+                    dataset_instance.dense_pcd_map_bev_trace_image_folder,
+                    key + '.jpg')
+                cv2.imwrite(temp_dense_pcd_map_trace_output_path,
+                            temp_dense_pcd_map)
+            with open(each_map_self_local_output_path, 'w') as js:
+                js.write(json.dumps(dataset_instance.each_map_self_local))
+                js.close()
+                # TODO
+                return
+
         return
 
 
@@ -1042,21 +1125,21 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
         np.uint8)
 
     for id in image_dense_map_id:
-        local_pcd_map_whwh = [
-            dataset_instance.label_range[0] /
-            dataset_instance.pcd_meter_per_pixel,
-            dataset_instance.label_range[1] /
-            dataset_instance.pcd_meter_per_pixel,
-            dataset_instance.label_range[2] /
-            dataset_instance.pcd_meter_per_pixel,
-            dataset_instance.label_range[3] /
-            dataset_instance.pcd_meter_per_pixel
-        ]
+        # local_pcd_map_whwh = [
+        #     dataset_instance.label_range[0] /
+        #     dataset_instance.pcd_meter_per_pixel,
+        #     dataset_instance.label_range[1] /
+        #     dataset_instance.pcd_meter_per_pixel,
+        #     dataset_instance.label_range[2] /
+        #     dataset_instance.pcd_meter_per_pixel,
+        #     dataset_instance.label_range[3] /
+        #     dataset_instance.pcd_meter_per_pixel
+        # ]
 
-        # 获取截取外围正方形
-        local_pcd_map_edge_max = max(local_pcd_map_whwh)
-        expand_local_pcd_map_w = local_pcd_map_edge_max * 2
-        expand_local_pcd_map_h = local_pcd_map_edge_max * 2
+        # # 获取截取外围正方形
+        # local_pcd_map_edge_max = max(local_pcd_map_whwh)
+        # expand_local_pcd_map_w = local_pcd_map_edge_max * 2
+        # expand_local_pcd_map_h = local_pcd_map_edge_max * 2
 
         temp_dense_pcd_map_dict = dataset_instance.dense_pcd_map_location_total_dict[
             id]
@@ -1068,7 +1151,6 @@ def get_dense_map_bev_image(dataset_instance: Dataset_Base, image: IMAGE,
             temp_dense_pcd_map_dict['name'] + '.jpg')
         temp_dense_pcd_map = cv2.cvtColor(
             np.asarray(Image.open(temp_dense_pcd_map_path)), cv2.COLOR_RGB2BGR)
-
         h_scale = (temp_dense_pcd_map_dict['max_y'] -
                    image.image_ego_pose_dict['utm_position.y']) / (
                        temp_dense_pcd_map_dict['max_y'] -
