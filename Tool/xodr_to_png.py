@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-10-26 16:14:14
 LastEditors: Leidi
-LastEditTime: 2022-10-27 19:22:38
+LastEditTime: 2022-10-27 19:45:35
 '''
 import os
 import xml.etree.ElementTree as ET
@@ -20,8 +20,6 @@ root = tree.getroot()
 header = root.find('header')
 
 road_object_inertial_point_dict = {}
-
-road_inertial_object = {}
 for road_id, road in enumerate(root.findall('road')):
     road_planView = road.find('planView')
     road_planView_geo = road_planView.find('geometry')
@@ -33,6 +31,7 @@ for road_id, road in enumerate(root.findall('road')):
             map(float, [
                 road_planView_geo.attrib['x'], road_planView_geo.attrib['y'], 0
             ])))
+
     object_inertial_point_dict = {}
     for objects in road.findall('objects'):
         for object in objects.findall('object'):
@@ -49,6 +48,7 @@ for road_id, road in enumerate(root.findall('road')):
                         object.attrib['s'], object.attrib['t'],
                         object.attrib['zOffset']
                     ])))
+
             object_outline = object.find('outline')
             cornerLocal_inertial_point_list = []
             for cornerLocal in object_outline.findall('cornerLocal'):
