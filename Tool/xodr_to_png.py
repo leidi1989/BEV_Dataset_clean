@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-10-26 16:14:14
 LastEditors: Leidi
-LastEditTime: 2022-10-27 16:14:54
+LastEditTime: 2022-10-27 18:38:35
 '''
 import math
 import os
@@ -21,9 +21,8 @@ root = tree.getroot()
 header = root.find('header')
 
 road_planView_geo = 0
-road_object_dict = {}
-object_dict = {}
-
+road_object_inertial_point_dict = {}
+object_inertial_point_dict = {}
 
 road_inertial_object = {}
 for road_id, road in enumerate(root.findall('road')):
@@ -32,9 +31,11 @@ for road_id, road in enumerate(root.findall('road')):
     rline_to_inertial_R = R.from_euler(
         'zyx', list(map(float,
                         [road_planView_geo.attrib['hdg'], 0, 0]))).as_matrix()
-    rline_to_inertial_T = list(
-        map(float,
-            [road_planView_geo.attrib['x'], road_planView_geo.attrib['y'], 0]))
+    rline_to_inertial_T = np.array(
+        list(
+            map(float, [
+                road_planView_geo.attrib['x'], road_planView_geo.attrib['y'], 0
+            ])))
     for objects in road.findall('objects'):
         for object in objects.findall('object'):
             local_to_rline_R = R.from_euler(
@@ -44,43 +45,29 @@ for road_id, road in enumerate(root.findall('road')):
                         object.attrib['hdg'], object.attrib['pitch'],
                         object.attrib['roll']
                     ]))).as_matrix()
-            local_to_rline_T = list(
-                map(float, [
-                    object.attrib['s'], object.attrib['t'],
-                    object.attrib['zOffset']
-                ]))
+            local_to_rline_T = np.array(
+                list(
+                    map(float, [
+                        object.attrib['s'], object.attrib['t'],
+                        object.attrib['zOffset']
+                    ])))
             object_outline = object.find('outline')
+            cornerLocal_inertial_point_list = []
             for cornerLocal in object_outline.findall('cornerLocal'):
-                
-                print(0)
-
-
-def EulerAngles2RotationMatrix(theta, format='degree'):
-    """
-    Calculates Rotation Matrix given euler angles.基于右手系
-    param theta: 1-by-3 list [rx, ry, rz] angle in degree
-        theta[0]: roll       绕定轴X转动    
-        theta[1]: pitch      绕定轴Y转动
-        theta[2]: yaw        绕定轴Z转动  
-        
-    return:
-        YPR角,是ZYX欧拉角,依次 绕定轴XYZ转动[rx, ry, rz]
-    
-    """
-    if format == 'degree':
-        theta = [i * math.pi / 180.0 for i in theta]
-
-    R_x = np.array([[1, 0, 0], [0, math.cos(theta[0]), -math.sin(theta[0])],
-                    [0, math.sin(theta[0]),
-                     math.cos(theta[0])]])
-
-    R_y = np.array([[math.cos(theta[1]), 0,
-                     math.sin(theta[1])], [0, 1, 0],
-                    [-math.sin(theta[1]), 0,
-                     math.cos(theta[1])]])
-
-    R_z = np.array([[math.cos(theta[2]), -math.sin(theta[2]), 0],
-                    [math.sin(theta[2]),
-                     math.cos(theta[2]), 0], [0, 0, 1]])
-
-    return R_x, R_y, R_z
+                cornerLocal_point = np.array(
+                    list(
+                        map(float, [
+                            cornerLocal.attrib['u'], cornerLocal.attrib['v'],
+                            cornerLocal.attrib['z']
+                        ])))
+                inertial_point = np.dot(
+                    rline_to_inertial_R,
+                    np.dot(local_to_rline_R, cornerLocal_point) +
+                    local_to_rline_T) + rline_to_inertial_T
+                # to ll
+                cornerLocal_inertial_point_list.append(inertial_point)
+            object_inertial_point_dict.update(
+                {object.attrib['id']: cornerLocal_inertial_point_list})
+    road_object_inertial_point_dict.update(
+        {road_id: object_inertial_point_dict})
+    print(0)
