@@ -4,9 +4,8 @@ Version:
 Author: Leidi
 Date: 2022-10-26 16:14:14
 LastEditors: Leidi
-LastEditTime: 2022-10-27 18:38:35
+LastEditTime: 2022-10-27 19:22:38
 '''
-import math
 import os
 import xml.etree.ElementTree as ET
 
@@ -14,15 +13,13 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 source_annotations_path = os.path.join('/mnt/data_1/Dataset/dataset_temp',
-                                       'hefei_lukou_73-83(1.4).xodr')
+                                       'hefei_lukou_0-44.xodr')
 tree = ET.parse(source_annotations_path)
 root = tree.getroot()
 
 header = root.find('header')
 
-road_planView_geo = 0
 road_object_inertial_point_dict = {}
-object_inertial_point_dict = {}
 
 road_inertial_object = {}
 for road_id, road in enumerate(root.findall('road')):
@@ -36,6 +33,7 @@ for road_id, road in enumerate(root.findall('road')):
             map(float, [
                 road_planView_geo.attrib['x'], road_planView_geo.attrib['y'], 0
             ])))
+    object_inertial_point_dict = {}
     for objects in road.findall('objects'):
         for object in objects.findall('object'):
             local_to_rline_R = R.from_euler(
@@ -64,10 +62,11 @@ for road_id, road in enumerate(root.findall('road')):
                     rline_to_inertial_R,
                     np.dot(local_to_rline_R, cornerLocal_point) +
                     local_to_rline_T) + rline_to_inertial_T
-                # to ll
                 cornerLocal_inertial_point_list.append(inertial_point)
+
             object_inertial_point_dict.update(
                 {object.attrib['id']: cornerLocal_inertial_point_list})
+
     road_object_inertial_point_dict.update(
-        {road_id: object_inertial_point_dict})
-    print(0)
+        {road.attrib['name']: object_inertial_point_dict})
+print(0)
