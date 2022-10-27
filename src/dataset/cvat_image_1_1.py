@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-26 16:32:41
+LastEditTime: 2022-10-27 13:35:52
 '''
 import multiprocessing
 import shutil
@@ -995,8 +995,10 @@ class CVAT_IMAGE_1_1(Dataset_Base):
                                             dataset_instance.each_map_self_local.update(
                                                 {key: [value]})
                                         else:
-                                            dataset_instance.each_map_self_local[
-                                                key].append(value)
+                                            if value not in dataset_instance.each_map_self_local[
+                                                    key]:
+                                                dataset_instance.each_map_self_local[
+                                                    key].append(value)
                             else:
                                 pool.apply_async(
                                     func=get_dense_map_bev_image,

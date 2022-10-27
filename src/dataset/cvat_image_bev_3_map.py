@@ -4,7 +4,7 @@ Version:
 Author: Leidi
 Date: 2022-01-07 17:43:48
 LastEditors: Leidi
-LastEditTime: 2022-10-26 17:54:01
+LastEditTime: 2022-10-27 13:52:07
 '''
 import multiprocessing
 import os
@@ -856,11 +856,16 @@ class CVAT_IMAGE_BEV_3_MAP(Dataset_Base):
             # osm name
             osm_file_name = ''
             if self.extract_laneline_from_osm:
+                # local_map_vision_box = lanelet2.core.BoundingBox2d(
+                #     lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
+                #                                utm_y - self.utm_offset),
+                #     lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
+                #                                utm_y + self.utm_offset))
                 local_map_vision_box = lanelet2.core.BoundingBox2d(
-                    lanelet2.core.BasicPoint2d(utm_x - self.utm_offset,
-                                               utm_y - self.utm_offset),
-                    lanelet2.core.BasicPoint2d(utm_x + self.utm_offset,
-                                               utm_y + self.utm_offset))
+                    lanelet2.core.BasicPoint2d(utm_x - 1,
+                                               utm_y - 1),
+                    lanelet2.core.BasicPoint2d(utm_x + 1,
+                                               utm_y + 1))
                 for temp_osm_name, lanelet_layer in (lanelet_layers).items():
                     lanelets_inRegion = lanelet_layer.search(
                         local_map_vision_box)
